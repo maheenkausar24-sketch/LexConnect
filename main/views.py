@@ -1,4 +1,3 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import JsonResponse
@@ -7,6 +6,13 @@ from .models import Lawyer, Consultation, LawCategory, Message
 from google import genai
 import os
 from dotenv import load_dotenv
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import ChatSession, Lawyer
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+from .models import Lawyer, LawCategory
 
 load_dotenv()
 
@@ -63,7 +69,7 @@ def login_page(request):
 
         user = authenticate(request, username=username, password=password)
 
-        if user:
+        if user is not None:
 
             login(request, user)
             return redirect("/dashboard/")
@@ -91,37 +97,33 @@ def dashboard(request):
 # ---------------- LAWYERS ----------------
 
 def lawyers_by_category(request, category_id):
-
     category = LawCategory.objects.get(id=category_id)
 
-    lawyers = Lawyer.objects.filter(specialization=category)
+    lawyers = Lawyer.objects.filter(category=category)
 
     return render(request, "lawyers.html", {
         "category": category,
         "lawyers": lawyers
     })
 
-
 # ---------------- CONSULTATION ----------------
 
+@login_required
 def consult_lawyer(request, lawyer_id):
 
     lawyer = Lawyer.objects.get(id=lawyer_id)
 
     if request.method == "POST":
 
-        name = request.POST.get("name")
-        email = request.POST.get("email")
         issue = request.POST.get("issue")
 
-        consult = Consultation.objects.create(
-            name=name,
-            email=email,
-            issue=issue,
-            lawyer=lawyer
+        Consultation.objects.create(
+            user=request.user,
+            lawyer=lawyer,
+            issue=issue
         )
 
-        return redirect(f"/chat/{consult.id}/")
+        return redirect("request_success")
 
     return render(request, "consult.html", {"lawyer": lawyer})
 # ---------------- CHATBOT PAGE ----------------
@@ -133,7 +135,18 @@ def chatbot(request):
 # ---------------- LOGOUT ----------------
 
 def logout_user(request):
+
+    if request.user.is_authenticated:
+
+        try:
+            lawyer = Lawyer.objects.get(user=request.user)
+            lawyer.is_online = False
+            lawyer.save()
+        except:
+            pass
+
     logout(request)
+
     return redirect("/")
 
 
@@ -280,33 +293,169 @@ Provide clear legal guidance in steps and suggest the correct type of lawyer.
             "lawyers": lawyers
         })
 
+from django.shortcuts import get_object_or_404
+
 def consultation_chat(request, consultation_id):
 
-    consultation = Consultation.objects.get(id=consultation_id)
+    consultation = get_object_or_404(Consultation, id=consultation_id)
 
-    messages = Message.objects.filter(consultation=consultation)
+    # get or create chat session
+    chat, created = ChatSession.objects.get_or_create(
+        consultation=consultation
+    )
+
+    messages = Message.objects.filter(chat=chat).order_by("created_at")
+
+    if request.method == "POST":
+        text = request.POST.get("message")
+
+        Message.objects.create(
+            chat=chat,
+            sender=request.user,
+            text=text
+        )
+
+    return render(request, "chat.html", {
+        "chat": chat,
+        "messages": messages,
+        "consultation": consultation
+    })
+
+def lawyer_register(request):
+
+    categories = LawCategory.objects.all()
 
     if request.method == "POST":
 
-        text = request.POST.get("message")
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        phone = request.POST.get("phone")
+        location = request.POST.get("location")
+        experience = request.POST.get("experience")
+        specialization = request.POST.get("specialization")
 
-        # save user message
-        Message.objects.create(
-            consultation=consultation,
-            sender="user",
-            message=text
+        # CHECK IF USERNAME EXISTS
+        if User.objects.filter(username=username).exists():
+
+            messages.error(request, "Username already exists. Try another one.")
+
+            return redirect("lawyer_register")
+
+        # CREATE USER
+        user = User.objects.create_user(
+            username=username,
+            password=password
         )
 
-        # simulated lawyer reply
-        Message.objects.create(
-            consultation=consultation,
-            sender="lawyer",
-            message="Thank you for sharing your issue. I will review your case."
+        category = LawCategory.objects.get(id=specialization)
+
+        Lawyer.objects.create(
+            user=user,
+            name=name,
+            email=email,
+            phone=phone,
+            location=location,
+            experience=experience,
+            specialization=category
         )
 
-        return redirect(f"/chat/{consultation_id}/")
+        return redirect("lawyer_login")
 
-    return render(request, "chat.html", {
-        "consultation": consultation,
-        "messages": messages
+    return render(request, "lawyer_register.html", {
+        "categories": categories
+    })
+
+def lawyer_login(request):
+
+    if request.method == "POST":
+
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request,username=username,password=password)
+
+        if user:
+
+            login(request,user)
+
+            lawyer = Lawyer.objects.get(user=user)
+
+            lawyer.is_online = True
+            lawyer.save()
+
+            return redirect("/lawyer/dashboard/")
+
+    return render(request,"lawyer_login.html")
+
+@login_required
+def lawyer_dashboard(request):
+
+    lawyer = Lawyer.objects.get(user=request.user)
+
+    consultations = Consultation.objects.filter(lawyer=lawyer)
+    
+    return render(request,"lawyer_dashboard.html",{
+        "lawyer":lawyer,
+        "consultations":consultations
+    })
+
+def lawyer_profile(request, lawyer_id):
+
+    lawyer = Lawyer.objects.get(id=lawyer_id)
+
+    return render(request, "lawyer_profile.html", {
+        "lawyer": lawyer
+    })
+
+
+@login_required
+def start_chat(request, consultation_id):
+
+    consultation = Consultation.objects.get(id=consultation_id)
+
+    chat = ChatSession.objects.create(
+        lawyer=consultation.lawyer,
+        user=request.user   # use logged-in user instead
+    )
+
+    return redirect(f"/chat/{chat.id}/")
+
+
+def request_success(request):
+    return render(request,"success.html")
+
+    return redirect("/request-success/")   
+
+
+def chat_page(request, chat_id):
+
+    chat = ChatSession.objects.get(id=chat_id)
+
+    messages = Message.objects.filter(chat=chat)
+
+    if request.method == "POST":
+
+        text = request.POST.get("text")
+
+        Message.objects.create(
+            chat=chat,
+            sender=request.user,
+            text=text
+        )
+
+        return redirect(f"/chat/{chat.id}/")
+
+    return render(request,"chat.html",{
+        "chat":chat,
+        "messages":messages
+    })
+
+def user_chats(request):
+
+    chats = ChatSession.objects.filter(user=request.user)
+
+    return render(request,"user_chats.html",{
+        "chats":chats
     })

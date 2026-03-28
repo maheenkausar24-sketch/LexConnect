@@ -1,0 +1,12 @@
+<h2>My Chats</h2>
+
+{% for chat in chats %}
+
+<p>
+Chat with {{ chat.lawyer.name }}
+
+<a href="/chat/{{ chat.id }}/">Open Chat</a>
+
+</p>
+
+{% endfor %}

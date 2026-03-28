@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Lawyer Dashboard - LexConnect</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#2c3e50,#4ca1af);
+min-height:100vh;
+}
+
+.header{
+background:#1a252f;
+color:white;
+padding:15px 40px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.header h2{
+margin:0;
+}
+
+.logout{
+background:#e74c3c;
+color:white;
+padding:8px 14px;
+border-radius:6px;
+text-decoration:none;
+}
+
+.container{
+padding:40px;
+}
+
+.title{
+color:white;
+margin-bottom:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:15px;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+.card h3{
+margin:0 0 10px 0;
+}
+
+.chat-btn{
+background:#2c3e50;
+color:white;
+padding:8px 14px;
+border-radius:6px;
+text-decoration:none;
+}
+
+.empty{
+background:white;
+padding:30px;
+border-radius:10px;
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+    
+
+<div class="header">
+
+<h2>⚖ LexConnect Lawyer Panel</h2>
+
+<a class="logout" href="/logout/">Logout</a>
+
+</div>
+
+<div class="container">
+
+    <h2 style="margin-top:20px;">
+Welcome Advocate {{ lawyer.name }}
+</h2>
+<h2 class="title">Your Consultation Requests</h2>
+
+{% if consultations %}
+
+{% for consult in consultations %}
+<div class="card">
+
+<h3>Client: {{consult.user}}</h3>
+
+<p><b>Email:</b> {{consult.user.email}}</p>
+
+<p><b>Issue:</b> {{consult.issue}}</p>
+
+<a href="/chat/start/{{ consult.id }}/">Start Chat</a>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<div class="empty">
+
+<h3>No consultation requests yet</h3>
+
+<p>Clients will appear here when they request help.</p>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</body>
+
+</html>

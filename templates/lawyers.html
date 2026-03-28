@@ -101,23 +101,32 @@
             <p class="info"><b>Email:</b> {{ lawyer.email }}</p>
 
             <p class="info"><b>Phone:</b> {{ lawyer.phone }}</p>
-            <p class="info"><b>Address:</b> {{ lawyer.address }}</p>
+              <strong>Address:</strong> 📍 {{ lawyer.location }}
 
-            <a href="/consult/{{ lawyer.id }}/">
-                <button>Consult Lawyer</button>
+              
+            <a href="/lawyer/profile/{{lawyer.id}}/" style="text-decoration:none;">
+                <button>View Profile</button>
             </a>
 
-        </div>
 
-        {% empty %}
+           <div class="lawyer-card">
 
-        <p>No lawyers available in this category.</p>
+
+        {% if lawyer.is_online %}
+           <span style="color:green;">🟢 Active Now</span>
+
+
+          {% else %}
+            <span style="color:gray;">⚪ Offline</span>
+           <button disabled>Unavailable</button>
+
+          {% endif %}
+
+         </div>
+
+ </div>
 
         {% endfor %}
-
-    </div>
-
-
     <div class="back">
         <a href="/dashboard/">⬅ Back to Dashboard</a>
     </div>
