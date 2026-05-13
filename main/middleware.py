@@ -37,11 +37,24 @@ class SecurityHeadersMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    def content_security_policy(self):
+        directives = []
+        for directive, values in getattr(settings, "LEXCONNECT_CONTENT_SECURITY_POLICY", {}).items():
+            if not values:
+                continue
+            directives.append(f"{directive} {' '.join(values)}")
+        return "; ".join(directives)
+
     def __call__(self, request):
         response = self.get_response(request)
         response.setdefault("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
         response.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        response.setdefault("Cross-Origin-Resource-Policy", "same-origin")
         response.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+        csp = self.content_security_policy()
+        if csp:
+            header_name = "Content-Security-Policy-Report-Only" if getattr(settings, "LEXCONNECT_CSP_REPORT_ONLY", False) else "Content-Security-Policy"
+            response.setdefault(header_name, csp)
         return response
 
 

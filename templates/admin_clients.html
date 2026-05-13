@@ -33,6 +33,7 @@
                     <td>
                         <form method="post" action="{% url 'admin_update_user_status' client.id %}" {% if client.is_active %}data-confirm="Deactivate {{ client.username }}? They will lose platform access."{% endif %}>
                             {% csrf_token %}
+                            <input type="hidden" name="confirmation_token" value="user-status">
                             <input type="hidden" name="is_active" value="{% if client.is_active %}false{% else %}true{% endif %}">
                             <button class="btn {% if client.is_active %}btn-danger{% else %}btn-success{% endif %}" type="submit">{% if client.is_active %}Deactivate{% else %}Activate{% endif %}</button>
                         </form>

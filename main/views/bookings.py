@@ -17,6 +17,7 @@ from ..utils import create_notification
 
 
 @client_required
+@rate_limit("booking_create", limit=10, period=600)
 def consult_lawyer(request, lawyer_id):
     lawyer = get_object_or_404(visible_lawyers_queryset(), id=lawyer_id)
     upcoming_slots = upcoming_available_slots(lawyer)
@@ -88,6 +89,7 @@ def payment_page(request, booking_id):
 
 
 @lawyer_required
+@rate_limit("booking_status_action", limit=30, period=300)
 def update_booking_status(request, booking_id, status):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
@@ -124,6 +126,7 @@ def update_booking_status(request, booking_id, status):
 
 
 @login_required
+@rate_limit("booking_reschedule", limit=10, period=600)
 def reschedule_booking_view(request, booking_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
@@ -146,6 +149,7 @@ def reschedule_booking_view(request, booking_id):
 
 
 @login_required
+@rate_limit("booking_cancel", limit=10, period=600)
 def cancel_booking_view(request, booking_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
@@ -163,6 +167,7 @@ def cancel_booking_view(request, booking_id):
 
 
 @client_required
+@rate_limit("review_create", limit=10, period=600)
 def add_review(request, lawyer_id):
     lawyer = get_object_or_404(Lawyer, id=lawyer_id)
     form = ReviewForm(request.POST or None)
@@ -198,6 +203,7 @@ def add_review(request, lawyer_id):
 
 
 @lawyer_required
+@rate_limit("availability_action", limit=30, period=300)
 def add_schedule_slot(request):
     if request.method != "POST":
         return HttpResponseBadRequest("Invalid request.")

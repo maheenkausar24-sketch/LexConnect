@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
+from .audit import security_event
 from .services.auth import get_dashboard_route, is_admin_user, is_client_user, is_lawyer_user
 
 
@@ -15,6 +16,13 @@ def role_required(role_check, error_message):
             if role_check(request.user):
                 return view_func(request, *args, **kwargs)
 
+            security_event(
+                "role_access_denied",
+                request=request,
+                actor=request.user,
+                required_role=getattr(role_check, "__name__", "role_check"),
+                view=getattr(view_func, "__name__", ""),
+            )
             messages.error(request, error_message)
             return redirect(get_dashboard_route(request.user))
 

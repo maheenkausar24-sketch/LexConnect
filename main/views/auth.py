@@ -113,6 +113,7 @@ def logout_user(request):
     return redirect("home")
 
 
+@rate_limit("email_verification_link", limit=20, period=300, methods=("GET",))
 def verify_email(request, uidb64, token):
     user = verify_email_token(uidb64, token, request=request)
     if user is None:

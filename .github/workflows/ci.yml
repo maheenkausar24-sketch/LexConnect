@@ -32,11 +32,23 @@ jobs:
           CELERY_TASK_ALWAYS_EAGER: "True"
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Applied migration check
+        env:
+          DJANGO_DEBUG: "True"
+          CELERY_TASK_ALWAYS_EAGER: "True"
+        run: python manage.py migrate --check
+
       - name: Celery configuration check
         env:
           DJANGO_DEBUG: "True"
           CELERY_TASK_ALWAYS_EAGER: "True"
         run: python manage.py validate_celery
+
+      - name: Retention cleanup dry run
+        env:
+          DJANGO_DEBUG: "True"
+          CELERY_TASK_ALWAYS_EAGER: "True"
+        run: python manage.py cleanup_operational_records --dry-run
 
       - name: Tests
         env:

@@ -3,9 +3,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from ..models import Notification
+from ..rate_limit import rate_limit
 
 
 @login_required
+@rate_limit("notifications_action", limit=60, period=300)
 def notifications_view(request):
     notifications = Notification.objects.filter(user=request.user)
     if request.method == "POST":
@@ -15,6 +17,7 @@ def notifications_view(request):
 
 
 @login_required
+@rate_limit("notification_read", limit=120, period=300)
 def mark_notification_read(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     notification.is_read = True

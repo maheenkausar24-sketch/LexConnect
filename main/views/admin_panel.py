@@ -5,7 +5,7 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ..decorators import admin_required
-from ..forms import AdminLawyerVerificationForm, AdminPaymentStatusForm, AdminUserStatusForm
+from ..forms import AdminBookingCancelForm, AdminLawyerVerificationForm, AdminPaymentStatusForm, AdminUserStatusForm
 from ..models import Booking, Lawyer, OperationalEvent, Payment, ProviderEvent
 from ..audit import audit_event
 from ..rate_limit import rate_limit
@@ -183,6 +183,7 @@ def admin_payment_timeline(request, payment_id):
 
 
 @admin_required
+@rate_limit("admin_lawyer_action", limit=30, period=300)
 def admin_update_lawyer_verification(request, lawyer_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
@@ -200,6 +201,7 @@ def admin_update_lawyer_verification(request, lawyer_id):
 
 
 @admin_required
+@rate_limit("admin_user_action", limit=30, period=300)
 def admin_update_user_status(request, user_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
@@ -220,9 +222,15 @@ def admin_update_user_status(request, user_id):
 
 
 @admin_required
+@rate_limit("admin_booking_action", limit=20, period=300)
 def admin_cancel_booking(request, booking_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST only.")
+
+    form = AdminBookingCancelForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, form.first_error() or "Unable to confirm booking cancellation.")
+        return redirect("admin_bookings")
 
     booking = get_object_or_404(Booking.objects.select_related("client", "lawyer"), id=booking_id)
     try:

@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 
 from ..services.payments import process_provider_webhook
 from ..audit import record_operational_event
+from ..rate_limit import rate_limit
 
 
 logger = logging.getLogger("main.webhooks")
@@ -16,6 +17,7 @@ logger = logging.getLogger("main.webhooks")
 
 @csrf_exempt
 @require_POST
+@rate_limit("provider_webhook", limit=120, period=60, methods=("POST",), json_response=True)
 def provider_webhook(request, provider):
     try:
         payload = json.loads(request.body.decode("utf-8") or "{}")

@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from .audit import record_operational_event
 from .models import Notification, Payment, ProviderEvent
+from .services.operations import cleanup_stale_operational_records
 from .services.payments import process_provider_webhook, reconcile_payment_ledger
 from .utils import create_notification_record, mark_stale_users_offline
 
@@ -155,6 +156,13 @@ def reconcile_payment_ledgers(self, limit=500):
 def mark_stale_users_offline_task(self):
     mark_stale_users_offline()
     task_logger.info({"event": "stale_users_marked_offline", "task_id": self.request.id, "finished_at": timezone.now().isoformat()})
+
+
+@shared_task(bind=True, base=LoggedRetryTask)
+def cleanup_stale_operational_records_task(self):
+    result = cleanup_stale_operational_records()
+    task_logger.info({"event": "stale_operational_records_cleaned", "task_id": self.request.id, **result})
+    return result
 
 
 @task_retry.connect

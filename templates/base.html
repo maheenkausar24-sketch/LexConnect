@@ -18,7 +18,9 @@
             </a>
             <div class="nav-links">
                 <a class="nav-link" href="{% url 'home' %}">Home</a>
-                <a class="nav-link" href="{% url 'demo_accounts' %}">Demo Accounts</a>
+                {% if show_demo_accounts %}
+                    <a class="nav-link" href="{% url 'demo_accounts' %}">Demo Accounts</a>
+                {% endif %}
                 {% if request.user.is_authenticated %}
                     {% if request.user.is_staff or request.user.is_superuser %}
                         <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>

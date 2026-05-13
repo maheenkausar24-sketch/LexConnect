@@ -62,11 +62,13 @@ Useful validation commands:
 python manage.py check
 python manage.py makemigrations --check --dry-run
 python manage.py migrate --check
+python manage.py validate_production
+python manage.py cleanup_operational_records --dry-run
 python manage.py validate_celery
 celery -A lexconnect report
 ```
 
-See `docs/production_infrastructure.md` for production startup guidance.
+See `docs/production_infrastructure.md` and `docs/phase4d_production_runbook.md` for production startup, rollback, backup/restore, and retention guidance.
 
 ## Notes
 

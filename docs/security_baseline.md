@@ -22,6 +22,7 @@
 - Use Redis for Channels by setting `REDIS_URL` before running multiple web workers.
 - Serve uploaded media from private storage or through authenticated protected views.
 - Remove or restrict demo credential pages before exposing a production deployment.
+- Set `LEXCONNECT_SHOW_DEMO_ACCOUNTS=False` before exposing a production deployment.
 - Configure a real email backend for password reset and verification mail.
 - Keep `GEMINI_API_KEY` optional; Lexora falls back to safe static guidance when unavailable.
 
@@ -36,3 +37,13 @@
 - Protected routes for chat files, certificates, and case documents.
 - WebSocket origin validation and per-chat authorization.
 - Lexora request validation, rate limiting, disclaimer, and provider error reporting.
+
+## Phase 4D Hardening Additions
+
+- Conservative Content Security Policy, Permissions Policy, COOP, CORP, and cross-domain policy headers.
+- Stricter env parsing for booleans and integers, plus `validate_production`.
+- Server-side admin action confirmation tokens for risky payment, booking, user, and lawyer state changes.
+- Expanded rate limiting for webhooks, email verification links, booking actions, chat polling, notifications, and admin mutations.
+- Upload validation rejects empty files, hidden filenames, path-like filenames, control characters, oversized names, SVGs, MIME mismatches, and magic-header mismatches.
+- Demo account page can be disabled in production with `LEXCONNECT_SHOW_DEMO_ACCOUNTS=False`.
+- Operational retention cleanup command/task for stale operational events and read notifications.

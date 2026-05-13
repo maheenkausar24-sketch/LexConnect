@@ -18,8 +18,16 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - staticfiles:/app/staticfiles
+      - media:/app/media
     depends_on:
       - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live/', timeout=5).read()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   worker:
     build: .
@@ -35,8 +43,10 @@ services:
       CELERY_TASK_ALWAYS_EAGER: "False"
     volumes:
       - .:/app
+      - media:/app/media
     depends_on:
       - redis
+    restart: unless-stopped
 
   beat:
     build: .
@@ -52,10 +62,21 @@ services:
       CELERY_TASK_ALWAYS_EAGER: "False"
     volumes:
       - .:/app
+      - media:/app/media
     depends_on:
       - redis
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  staticfiles:
+  media:
+  redis-data:

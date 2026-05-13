@@ -172,11 +172,24 @@ class PaymentStatusForm(ErrorListMixin, forms.Form):
     )
 
 
-class AdminPaymentStatusForm(ErrorListMixin, forms.Form):
+class AdminActionConfirmationForm(ErrorListMixin, forms.Form):
+    confirmation_token = forms.CharField(widget=forms.HiddenInput)
+    expected_confirmation_token = ""
+
+    def clean_confirmation_token(self):
+        token = self.cleaned_data["confirmation_token"]
+        if token != self.expected_confirmation_token:
+            raise ValidationError("Action confirmation is missing or invalid.")
+        return token
+
+
+class AdminPaymentStatusForm(AdminActionConfirmationForm):
+    expected_confirmation_token = "payment-status"
     payment_status = forms.ChoiceField(choices=Payment.PaymentStatus.choices)
 
 
-class AdminLawyerVerificationForm(ErrorListMixin, forms.Form):
+class AdminLawyerVerificationForm(AdminActionConfirmationForm):
+    expected_confirmation_token = "lawyer-verification"
     is_verified = forms.ChoiceField(
         choices=[
             ("true", "Approve"),
@@ -188,7 +201,8 @@ class AdminLawyerVerificationForm(ErrorListMixin, forms.Form):
         return self.cleaned_data["is_verified"] == "true"
 
 
-class AdminUserStatusForm(ErrorListMixin, forms.Form):
+class AdminUserStatusForm(AdminActionConfirmationForm):
+    expected_confirmation_token = "user-status"
     is_active = forms.ChoiceField(
         choices=[
             ("true", "Activate"),
@@ -198,6 +212,10 @@ class AdminUserStatusForm(ErrorListMixin, forms.Form):
 
     def cleaned_value(self):
         return self.cleaned_data["is_active"] == "true"
+
+
+class AdminBookingCancelForm(AdminActionConfirmationForm):
+    expected_confirmation_token = "booking-cancel"
 
 
 class MessageForm(ErrorListMixin, forms.Form):

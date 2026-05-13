@@ -53,6 +53,7 @@ def chat_page(request, chat_id):
 
 
 @login_required
+@rate_limit("chat_poll", limit=120, period=60, methods=("GET",), json_response=True)
 def chat_messages(request, chat_id):
     chat = get_authorized_chat(request.user, chat_id)
     after = request.GET.get("after", "").strip()

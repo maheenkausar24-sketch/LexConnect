@@ -158,10 +158,13 @@ def broadcast_chat_message(message, *, client_temp_id=""):
     payload = serialize_message(message)
     if client_temp_id:
         payload["client_temp_id"] = client_temp_id
-    async_to_sync(channel_layer.group_send)(
-        f"chat_{message.chat_id}",
-        {
-            "type": "chat.message",
-            "payload": payload,
-        },
-    )
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{message.chat_id}",
+            {
+                "type": "chat.message",
+                "payload": payload,
+            },
+        )
+    except Exception:
+        logger.exception({"event": "chat_broadcast_failed", "message_id": message.id, "chat_id": message.chat_id})

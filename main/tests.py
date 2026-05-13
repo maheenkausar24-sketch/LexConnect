@@ -387,7 +387,7 @@ class LexConnectFlowTests(TestCase):
         self.client.force_login(admin_user)
         response = self.client.post(
             reverse("admin_update_payment", args=[booking.payment.id]),
-            {"payment_status": Payment.PaymentStatus.SUCCESS},
+            {"payment_status": Payment.PaymentStatus.SUCCESS, "confirmation_token": "payment-status"},
         )
 
         booking.refresh_from_db()
@@ -965,6 +965,40 @@ class LexConnectFlowTests(TestCase):
 
         self.assertRedirects(response, reverse("client_dashboard"))
 
+    def test_admin_payment_update_requires_confirmation_token(self):
+        client_user = self.create_client(username="confirm_client", email="confirm_client@example.com")
+        admin_user = self.create_admin(username="confirm_admin", email="confirm_admin@example.com")
+        _, lawyer = self.create_lawyer(username="confirm_lawyer", email="confirm_lawyer@example.com")
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=1),
+            appointment_time=time(10, 0),
+            status=Booking.Status.PENDING,
+        )
+        payment = Payment.objects.create(booking=booking, amount=lawyer.fee)
+        self.client.force_login(admin_user)
+
+        response = self.client.post(reverse("admin_update_payment", args=[payment.id]), {"payment_status": Payment.PaymentStatus.SUCCESS})
+
+        payment.refresh_from_db()
+        self.assertRedirects(response, reverse("admin_payments"))
+        self.assertEqual(payment.payment_status, Payment.PaymentStatus.PENDING)
+
+    def test_security_headers_include_content_security_policy(self):
+        response = self.client.get(reverse("home"))
+
+        self.assertIn("Content-Security-Policy", response.headers)
+        self.assertIn("object-src 'none'", response.headers["Content-Security-Policy"])
+        self.assertEqual(response.headers["Cross-Origin-Opener-Policy"], "same-origin")
+
+    @override_settings(LEXCONNECT_SHOW_DEMO_ACCOUNTS=False)
+    def test_demo_accounts_can_be_disabled_for_production(self):
+        response = self.client.get(reverse("demo_accounts"))
+
+        self.assertEqual(response.status_code, 404)
+
     def test_login_rate_limit_blocks_repeated_failures(self):
         for _ in range(8):
             response = self.client.post(reverse("login"), {"username": "missing", "password": "bad"})
@@ -1027,11 +1061,14 @@ class LexConnectFlowTests(TestCase):
     def test_upload_validation_rejects_svg_and_mime_mismatch(self):
         svg = SimpleUploadedFile("unsafe.svg", b"<svg></svg>", content_type="image/svg+xml")
         fake_png = SimpleUploadedFile("fake.png", b"not a png", content_type="image/png")
+        hidden = SimpleUploadedFile(".hidden.txt", b"hello", content_type="text/plain")
 
         with self.assertRaises(ValidationError):
             validate_chat_file(svg)
         with self.assertRaises(ValidationError):
             validate_chat_file(fake_png)
+        with self.assertRaises(ValidationError):
+            validate_chat_file(hidden)
 
     def test_protected_chat_file_requires_chat_participant(self):
         client_user = self.create_client(username="file_client", email="file_client@example.com")
@@ -1115,3 +1152,23 @@ class LexConnectFlowTests(TestCase):
             self.assertEqual(response.status_code, 200)
 
         self.assertTrue(OperationalEvent.objects.filter(event="ops_test_event").exists())
+
+    def test_cleanup_operational_records_dry_run_and_delete(self):
+        old_event = OperationalEvent.objects.create(source=OperationalEvent.Source.SYSTEM, event="old_event")
+        OperationalEvent.objects.filter(id=old_event.id).update(created_at=timezone.now() - timedelta(days=120))
+        notification = Notification.objects.create(
+            user=self.create_client(username="cleanup_client", email="cleanup@example.com"),
+            title="Old read",
+            message="Stale notification",
+            is_read=True,
+            read_at=timezone.now() - timedelta(days=200),
+        )
+
+        dry_run = call_command("cleanup_operational_records", "--dry-run")
+        self.assertTrue(OperationalEvent.objects.filter(id=old_event.id).exists())
+        self.assertTrue(Notification.objects.filter(id=notification.id).exists())
+
+        call_command("cleanup_operational_records", "--events-days=90", "--notifications-days=180")
+
+        self.assertFalse(OperationalEvent.objects.filter(id=old_event.id).exists())
+        self.assertFalse(Notification.objects.filter(id=notification.id).exists())

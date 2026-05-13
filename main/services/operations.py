@@ -1,8 +1,12 @@
+from datetime import timedelta
+
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from django.utils import timezone
+
+from ..models import Notification, OperationalEvent
 
 
 def check_database():
@@ -54,3 +58,28 @@ def health_report():
         "checked_at": timezone.now().isoformat(),
         "checks": checks,
     }
+
+
+def cleanup_stale_operational_records(*, event_retention_days=None, notification_retention_days=None, dry_run=False):
+    event_days = event_retention_days or getattr(settings, "LEXCONNECT_OPERATIONAL_EVENT_RETENTION_DAYS", 90)
+    notification_days = notification_retention_days or getattr(settings, "LEXCONNECT_READ_NOTIFICATION_RETENTION_DAYS", 180)
+    event_cutoff = timezone.now() - timedelta(days=event_days)
+    notification_cutoff = timezone.now() - timedelta(days=notification_days)
+
+    stale_events = OperationalEvent.objects.filter(created_at__lt=event_cutoff)
+    stale_notifications = Notification.objects.filter(is_read=True, read_at__lt=notification_cutoff)
+    result = {
+        "event_retention_days": event_days,
+        "notification_retention_days": notification_days,
+        "stale_operational_events": stale_events.count(),
+        "stale_read_notifications": stale_notifications.count(),
+        "deleted_operational_events": 0,
+        "deleted_read_notifications": 0,
+        "dry_run": dry_run,
+    }
+    if dry_run:
+        return result
+
+    result["deleted_operational_events"] = stale_events.delete()[0]
+    result["deleted_read_notifications"] = stale_notifications.delete()[0]
+    return result

@@ -43,6 +43,7 @@
                         {% if booking.status != 'cancelled' and booking.status != 'completed' %}
                             <form method="post" action="{% url 'admin_cancel_booking' booking.id %}" data-confirm="Force cancel booking #{{ booking.id }}? This notifies the affected user and cannot be silently undone.">
                                 {% csrf_token %}
+                                <input type="hidden" name="confirmation_token" value="booking-cancel">
                                 <button class="btn btn-danger" type="submit">Force Cancel</button>
                             </form>
                         {% else %}

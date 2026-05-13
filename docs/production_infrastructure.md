@@ -36,6 +36,9 @@ Beat schedules payment ledger reconciliation every 30 minutes, failed webhook re
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
+python manage.py migrate --check
+python manage.py validate_production
+python manage.py cleanup_operational_records --dry-run
 python manage.py validate_celery
 python manage.py test
 celery -A lexconnect report
@@ -44,3 +47,7 @@ celery -A lexconnect report
 ## Logging
 
 Application logs use JSON formatting via `main.logging.JsonFormatter`. Dedicated loggers exist for requests, audit events, security events, payments, webhooks, and Celery tasks.
+
+## Phase 4D Notes
+
+Use `docs/phase4d_production_runbook.md` for the release checklist, rollback procedure, backup/restore guidance, retention cleanup policy, and final manual QA pass.

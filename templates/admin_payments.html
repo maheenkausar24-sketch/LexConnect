@@ -61,6 +61,7 @@
                     <td>
                         <form method="post" action="{% url 'admin_update_payment' payment.id %}" class="inline-meta" data-confirm="Update payment #{{ payment.id }} status? This can change booking access and notifications.">
                             {% csrf_token %}
+                            <input type="hidden" name="confirmation_token" value="payment-status">
                             <select name="payment_status">
                                 {% for value, label in payment_form.fields.payment_status.choices %}
                                     <option value="{{ value }}" {% if payment.payment_status == value %}selected{% endif %}>{{ label }}</option>
