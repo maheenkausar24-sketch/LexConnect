@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Provider Event Detail{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Provider Event</h1>
+        <p class="section-copy">{{ provider_event.provider }} &middot; {{ provider_event.event_id }}</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_provider_events' %}">Back to Provider Events</a>
+</div>
+
+<section class="grid grid-3 ops-strip" style="margin-bottom:24px;">
+    <div class="metric-card"><span>Status</span><strong>{{ provider_event.get_processing_status_display }}</strong></div>
+    <div class="metric-card"><span>Type</span><strong>{{ provider_event.event_type }}</strong></div>
+    <div class="metric-card"><span>Replay count</span><strong>{{ provider_event.replay_count }}</strong></div>
+</section>
+
+<section class="grid grid-2">
+    <div class="panel">
+        <div class="section-head"><h3>Linked Records</h3></div>
+        <div class="dashboard-list">
+            <div class="list-row">
+                <strong>Payment</strong>
+                {% if provider_event.payment %}
+                    <a class="file-link" href="{% url 'admin_payment_timeline' provider_event.payment.id %}">Payment #{{ provider_event.payment.id }}</a>
+                {% else %}
+                    <span class="muted">No payment linked.</span>
+                {% endif %}
+            </div>
+            <div class="list-row">
+                <strong>Refund</strong>
+                {% if provider_event.refund_request %}
+                    <span>Refund #{{ provider_event.refund_request.id }} &middot; {{ provider_event.refund_request.get_status_display }}</span>
+                {% else %}
+                    <span class="muted">No refund linked.</span>
+                {% endif %}
+            </div>
+            <div class="list-row">
+                <strong>Error</strong>
+                <span class="muted">{{ provider_event.error_message|default:"No processing error recorded." }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Payload</h3></div>
+        <pre class="code-block">{{ provider_event.payload }}</pre>
+    </div>
+</section>
+{% endblock %}

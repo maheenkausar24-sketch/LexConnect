@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from ..decorators import admin_required
 from ..forms import AdminLawyerVerificationForm, AdminPaymentStatusForm, AdminUserStatusForm
-from ..models import Booking, Lawyer, Payment
+from ..models import Booking, Lawyer, OperationalEvent, Payment, ProviderEvent
 from ..audit import audit_event
 from ..rate_limit import rate_limit
 from ..services.admin_panel import (
@@ -14,18 +14,24 @@ from ..services.admin_panel import (
     admin_clients_queryset,
     admin_dashboard_stats,
     admin_force_cancel_booking,
+    admin_operational_events_queryset,
+    admin_provider_events_queryset,
     admin_refunds_queryset,
     filter_admin_bookings_queryset,
     filter_admin_clients_queryset,
     filter_admin_lawyers_queryset,
+    filter_operational_events_queryset,
     filter_admin_payments_queryset,
+    filter_provider_events_queryset,
     admin_lawyers_queryset,
     admin_payments_queryset,
     admin_update_payment_status,
+    payment_timeline,
     paginate_queryset,
     set_lawyer_verification,
     set_user_active_state,
 )
+from ..services.operations import health_report
 
 
 User = get_user_model()
@@ -42,6 +48,8 @@ def admin_dashboard(request):
             "recent_bookings": admin_bookings_queryset()[:8],
             "recent_payments": admin_payments_queryset()[:8],
             "recent_refunds": admin_refunds_queryset()[:6],
+            "recent_operations": admin_operational_events_queryset()[:6],
+            "health_report": health_report(),
         },
     )
 
@@ -121,6 +129,57 @@ def admin_payments(request):
             "provider_choices": Payment.objects.exclude(provider="").order_by("provider").values_list("provider", flat=True).distinct(),
         },
     )
+
+
+@admin_required
+def admin_operational_events(request):
+    events = filter_operational_events_queryset(admin_operational_events_queryset(), request.GET)
+    events_page = paginate_queryset(events, request.GET.get("page"), per_page=30)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    return render(
+        request,
+        "admin_operational_events.html",
+        {
+            "events": events_page,
+            "page_obj": events_page,
+            "querystring": query_params.urlencode(),
+            "source_choices": OperationalEvent.Source.choices,
+            "level_choices": OperationalEvent.Level.choices,
+        },
+    )
+
+
+@admin_required
+def admin_provider_events(request):
+    events = filter_provider_events_queryset(admin_provider_events_queryset(), request.GET)
+    events_page = paginate_queryset(events, request.GET.get("page"), per_page=30)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    return render(
+        request,
+        "admin_provider_events.html",
+        {
+            "events": events_page,
+            "page_obj": events_page,
+            "querystring": query_params.urlencode(),
+            "status_choices": ProviderEvent.ProcessingStatus.choices,
+            "provider_choices": ProviderEvent.objects.exclude(provider="").order_by("provider").values_list("provider", flat=True).distinct(),
+        },
+    )
+
+
+@admin_required
+def admin_provider_event_detail(request, event_id):
+    provider_event = get_object_or_404(admin_provider_events_queryset(), id=event_id)
+    return render(request, "admin_provider_event_detail.html", {"provider_event": provider_event})
+
+
+@admin_required
+def admin_payment_timeline(request, payment_id):
+    payment = get_object_or_404(Payment, id=payment_id)
+    payment, timeline = payment_timeline(payment)
+    return render(request, "admin_payment_timeline.html", {"payment": payment, "timeline": timeline})
 
 
 @admin_required

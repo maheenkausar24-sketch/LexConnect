@@ -741,9 +741,15 @@ select:focus {
 .status-confirmed,
 .status-accepted,
 .status-rejected,
+.status-info,
+.status-warning,
+.status-error,
+.status-ok,
 .status-requested,
 .status-processing,
 .status-processed,
+.status-received,
+.status-ignored,
 .status-success,
 .status-awaiting_verification,
 .status-failed,
@@ -762,10 +768,27 @@ select:focus {
     color: #b45309;
 }
 
+.status-info,
+.status-ok {
+    background: rgba(22, 163, 74, 0.12);
+    color: var(--success);
+}
+
+.status-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+}
+
+.status-error {
+    background: rgba(220, 38, 38, 0.12);
+    color: var(--danger);
+}
+
 .status-awaiting_verification,
 .status-rescheduled,
 .status-requested,
-.status-processing {
+.status-processing,
+.status-received {
     background: rgba(59, 130, 246, 0.12);
     color: #1d4ed8;
 }
@@ -805,6 +828,42 @@ select:focus {
 .status-refunded {
     background: rgba(124, 58, 237, 0.12);
     color: #6d28d9;
+}
+
+.status-ignored {
+    background: rgba(107, 114, 128, 0.12);
+    color: #374151;
+}
+
+.timeline-list {
+    display: grid;
+    gap: 14px;
+}
+
+.timeline-item {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.35fr) minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-muted);
+    border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.timeline-item p {
+    margin: 8px 0 0;
+}
+
+.code-block {
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 16px;
+    border-radius: 14px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .chat-shell {
@@ -1116,6 +1175,10 @@ select:focus {
 
     .chat-input-wrap {
         border-radius: 18px;
+    }
+
+    .timeline-item {
+        grid-template-columns: 1fr;
     }
 }
 

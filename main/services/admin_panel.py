@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
-from ..models import Booking, Lawyer, Payment, ProviderEvent, RefundRequest, UserProfile
+from ..models import Booking, Lawyer, OperationalEvent, Payment, ProviderEvent, RefundRequest, UserProfile
 from ..utils import create_notification, ensure_profile_role, mark_user_offline
 from .bookings import cancel_booking
 from .payments import mark_payment_failed, mark_payment_pending, mark_payment_refunded, mark_payment_success
@@ -39,6 +39,23 @@ def admin_payments_queryset():
 
 def admin_refunds_queryset():
     return RefundRequest.objects.select_related("payment", "payment__booking", "payment__booking__client", "payment__booking__lawyer").order_by("-created_at")
+
+
+def admin_operational_events_queryset():
+    return OperationalEvent.objects.select_related("actor").order_by("-created_at")
+
+
+def admin_provider_events_queryset():
+    return (
+        ProviderEvent.objects.select_related(
+            "payment",
+            "payment__booking",
+            "payment__booking__client",
+            "payment__booking__lawyer",
+            "refund_request",
+        )
+        .order_by("-created_at")
+    )
 
 
 def paginate_queryset(queryset, page_number, per_page=20):
@@ -117,6 +134,109 @@ def filter_admin_payments_queryset(queryset, params):
     return queryset
 
 
+def filter_operational_events_queryset(queryset, params):
+    query = (params.get("q") or "").strip()
+    source = (params.get("source") or "").strip()
+    level = (params.get("level") or "").strip()
+    if query:
+        queryset = queryset.filter(
+            Q(event__icontains=query)
+            | Q(summary__icontains=query)
+            | Q(actor__username__icontains=query)
+            | Q(path__icontains=query)
+        )
+    if source:
+        queryset = queryset.filter(source=source)
+    if level:
+        queryset = queryset.filter(level=level)
+    return queryset
+
+
+def filter_provider_events_queryset(queryset, params):
+    query = (params.get("q") or "").strip()
+    status = (params.get("status") or "").strip()
+    provider = (params.get("provider") or "").strip()
+    if query:
+        queryset = queryset.filter(
+            Q(event_id__icontains=query)
+            | Q(event_type__icontains=query)
+            | Q(error_message__icontains=query)
+            | Q(payment__booking__client__username__icontains=query)
+            | Q(payment__booking__lawyer__name__icontains=query)
+            | Q(refund_request__provider_refund_id__icontains=query)
+        )
+    if status:
+        queryset = queryset.filter(processing_status=status)
+    if provider:
+        queryset = queryset.filter(provider=provider)
+    return queryset
+
+
+def payment_timeline(payment):
+    payment = (
+        Payment.objects.select_related("booking", "booking__client", "booking__lawyer")
+        .prefetch_related("status_history__actor", "provider_events", "refund_requests__status_history__actor", "ledger_entries")
+        .get(id=payment.id)
+    )
+    items = []
+    for history in payment.status_history.all():
+        items.append(
+            {
+                "timestamp": history.created_at,
+                "kind": "Payment status",
+                "status": history.to_status,
+                "summary": f"{history.from_status or 'created'} -> {history.to_status}",
+                "detail": history.reason,
+                "actor": history.actor,
+            }
+        )
+    for provider_event in payment.provider_events.all():
+        items.append(
+            {
+                "timestamp": provider_event.created_at,
+                "kind": "Provider event",
+                "status": provider_event.processing_status,
+                "summary": f"{provider_event.provider}:{provider_event.event_id}",
+                "detail": provider_event.error_message or provider_event.event_type,
+                "actor": None,
+            }
+        )
+    for refund in payment.refund_requests.all():
+        items.append(
+            {
+                "timestamp": refund.created_at,
+                "kind": "Refund",
+                "status": refund.status,
+                "summary": f"Refund #{refund.id} {refund.get_status_display()}",
+                "detail": refund.reason or refund.failure_reason,
+                "actor": refund.requested_by,
+            }
+        )
+        for history in refund.status_history.all():
+            items.append(
+                {
+                    "timestamp": history.created_at,
+                    "kind": "Refund status",
+                    "status": history.to_status,
+                    "summary": f"{history.from_status or 'created'} -> {history.to_status}",
+                    "detail": history.reason,
+                    "actor": history.actor,
+                }
+            )
+    for ledger in payment.ledger_entries.all():
+        items.append(
+            {
+                "timestamp": ledger.created_at,
+                "kind": "Ledger",
+                "status": ledger.entry_type,
+                "summary": f"{ledger.get_entry_type_display()} {ledger.amount} {ledger.currency}",
+                "detail": ledger.description,
+                "actor": None,
+            }
+        )
+    return payment, sorted(items, key=lambda item: item["timestamp"], reverse=True)
+
+
 def admin_dashboard_stats():
     payment_totals = Payment.objects.aggregate(
         pending=Count("id", filter=Q(payment_status=Payment.PaymentStatus.PENDING)),
@@ -155,6 +275,9 @@ def admin_dashboard_stats():
         "total_revenue": payment_totals["revenue"] or Decimal("0.00"),
         "open_refunds": RefundRequest.objects.filter(status__in=[RefundRequest.RefundStatus.REQUESTED, RefundRequest.RefundStatus.PROCESSING]).count(),
         "failed_provider_events": ProviderEvent.objects.filter(processing_status=ProviderEvent.ProcessingStatus.FAILED).count(),
+        "failed_tasks": OperationalEvent.objects.filter(source=OperationalEvent.Source.TASK, level=OperationalEvent.Level.ERROR).count(),
+        "security_warnings": OperationalEvent.objects.filter(source=OperationalEvent.Source.SECURITY).count(),
+        "recent_operations": OperationalEvent.objects.count(),
     }
 
 

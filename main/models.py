@@ -601,6 +601,43 @@ class Notification(models.Model):
         return f"{self.user.username}: {self.title}"
 
 
+class OperationalEvent(models.Model):
+    class Source(models.TextChoices):
+        AUDIT = "audit", "Audit"
+        SECURITY = "security", "Security"
+        WEBHOOK = "webhook", "Webhook"
+        TASK = "task", "Task"
+        SYSTEM = "system", "System"
+
+    class Level(models.TextChoices):
+        INFO = "info", "Info"
+        WARNING = "warning", "Warning"
+        ERROR = "error", "Error"
+
+    source = models.CharField(max_length=30, choices=Source.choices, db_index=True)
+    level = models.CharField(max_length=20, choices=Level.choices, default=Level.INFO, db_index=True)
+    event = models.CharField(max_length=120, db_index=True)
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="operational_events")
+    path = models.CharField(max_length=255, blank=True)
+    method = models.CharField(max_length=12, blank=True)
+    ip_address = models.CharField(max_length=64, blank=True)
+    user_agent = models.CharField(max_length=180, blank=True)
+    summary = models.CharField(max_length=255, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["source", "level", "created_at"], name="op_event_source_level_idx"),
+            models.Index(fields=["event", "created_at"], name="op_event_name_idx"),
+            models.Index(fields=["actor", "created_at"], name="op_event_actor_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.source}:{self.event}"
+
+
 class BookingStatusHistory(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="history")
     from_status = models.CharField(max_length=20, blank=True)

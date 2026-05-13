@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Operational Health{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Operational Health</h1>
+        <p class="section-copy">Production readiness indicators for database, cache, channels, and task queue configuration.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="grid grid-4 ops-strip">
+    {% for check in report.checks %}
+        <div class="metric-card">
+            <span>{{ check.name|title }}</span>
+            <strong><span class="status-{{ check.status }}">{{ check.status|title }}</span></strong>
+            <small class="muted">{{ check.detail }}</small>
+        </div>
+    {% endfor %}
+</section>
+
+<section class="panel" style="margin-top:24px;">
+    <div class="section-head"><h3>Health Endpoints</h3><span class="muted">Last checked {{ report.checked_at }}</span></div>
+    <div class="dashboard-list">
+        <a class="list-row" href="{% url 'health_live' %}"><strong>Liveness</strong><span class="muted">/health/live/</span></a>
+        <a class="list-row" href="{% url 'health_ready' %}"><strong>Readiness</strong><span class="muted">/health/ready/</span></a>
+    </div>
+</section>
+{% endblock %}

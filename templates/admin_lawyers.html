@@ -45,12 +45,12 @@
                     <td><span class="chip">{% if lawyer.user.is_active %}Active{% else %}Inactive{% endif %}</span></td>
                     <td>
                         <div class="inline-meta">
-                            <form method="post" action="{% url 'admin_update_lawyer_verification' lawyer.id %}">
+                            <form method="post" action="{% url 'admin_update_lawyer_verification' lawyer.id %}" {% if lawyer.is_verified %}data-confirm="Unverify {{ lawyer.name }}? This removes client-facing availability."{% endif %}>
                                 {% csrf_token %}
                                 <input type="hidden" name="is_verified" value="{% if lawyer.is_verified %}false{% else %}true{% endif %}">
                                 <button class="btn btn-secondary" type="submit">{% if lawyer.is_verified %}Unverify{% else %}Verify{% endif %}</button>
                             </form>
-                            <form method="post" action="{% url 'admin_update_user_status' lawyer.user.id %}">
+                            <form method="post" action="{% url 'admin_update_user_status' lawyer.user.id %}" {% if lawyer.user.is_active %}data-confirm="Deactivate {{ lawyer.user.username }}? They will lose platform access."{% endif %}>
                                 {% csrf_token %}
                                 <input type="hidden" name="is_active" value="{% if lawyer.user.is_active %}false{% else %}true{% endif %}">
                                 <button class="btn {% if lawyer.user.is_active %}btn-danger{% else %}btn-success{% endif %}" type="submit">{% if lawyer.user.is_active %}Deactivate{% else %}Activate{% endif %}</button>

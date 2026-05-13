@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Payment Timeline{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Payment Timeline</h1>
+        <p class="section-copy">Booking #{{ payment.booking.id }} &middot; {{ payment.booking.client.username }} with {{ payment.booking.lawyer.name }}</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_payments' %}">Back to Payments</a>
+</div>
+
+<section class="grid grid-4 dashboard-kpis" style="margin-bottom:24px;">
+    <div class="stat-card"><span class="muted">Status</span><strong>{{ payment.get_payment_status_display }}</strong></div>
+    <div class="stat-card"><span class="muted">Amount</span><strong>&#8377;{{ payment.amount }}</strong></div>
+    <div class="stat-card"><span class="muted">Provider</span><strong>{{ payment.provider }}</strong></div>
+    <div class="stat-card"><span class="muted">Reference</span><strong>#{{ payment.id }}</strong></div>
+</section>
+
+<section class="panel">
+    <div class="section-head"><h3>Operational Timeline</h3><span class="muted">{{ timeline|length }} event(s)</span></div>
+    <div class="timeline-list">
+        {% for item in timeline %}
+            <div class="timeline-item">
+                <div>
+                    <strong>{{ item.kind }}</strong>
+                    <p class="muted">{{ item.timestamp|date:"d M Y H:i:s" }}{% if item.actor %} &middot; {{ item.actor.username }}{% endif %}</p>
+                </div>
+                <div>
+                    <span class="status-{{ item.status }}">{{ item.status }}</span>
+                    <p>{{ item.summary }}</p>
+                    {% if item.detail %}<p class="muted">{{ item.detail }}</p>{% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="empty-card">No payment timeline events recorded yet.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

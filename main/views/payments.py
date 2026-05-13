@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -7,6 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from ..services.payments import process_provider_webhook
+from ..audit import record_operational_event
+
+
+logger = logging.getLogger("main.webhooks")
 
 
 @csrf_exempt
@@ -18,8 +23,19 @@ def provider_webhook(request, provider):
         if getattr(settings, "LEXCONNECT_ASYNC_WEBHOOKS", False):
             from ..tasks import process_provider_webhook_task
 
-            task = process_provider_webhook_task.delay(provider, payload, signature)
-            return JsonResponse({"accepted": True, "task_id": task.id}, status=202)
+            try:
+                task = process_provider_webhook_task.delay(provider, payload, signature)
+                return JsonResponse({"accepted": True, "task_id": task.id}, status=202)
+            except Exception as exc:
+                logger.exception({"event": "provider_webhook_queue_failed_falling_back", "provider": provider})
+                record_operational_event(
+                    "webhook",
+                    "provider_webhook_queue_failed_falling_back",
+                    level="warning",
+                    request=request,
+                    summary=f"{provider} webhook queue failed; processing synchronously.",
+                    metadata={"provider": provider, "error": exc.__class__.__name__},
+                )
         provider_event, processed = process_provider_webhook(
             provider,
             payload,

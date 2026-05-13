@@ -227,6 +227,7 @@ LOGGING = {
         "main.payments": {"handlers": ["console"], "level": os.getenv("DJANGO_PAYMENT_LOG_LEVEL", "INFO"), "propagate": False},
         "main.webhooks": {"handlers": ["console"], "level": os.getenv("DJANGO_WEBHOOK_LOG_LEVEL", "INFO"), "propagate": False},
         "main.tasks": {"handlers": ["console"], "level": os.getenv("DJANGO_TASK_LOG_LEVEL", "INFO"), "propagate": False},
+        "main.operations": {"handlers": ["console"], "level": os.getenv("DJANGO_OPERATION_LOG_LEVEL", "INFO"), "propagate": False},
         "celery": {"handlers": ["console"], "level": os.getenv("CELERY_LOG_LEVEL", "INFO"), "propagate": False},
         "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
     },

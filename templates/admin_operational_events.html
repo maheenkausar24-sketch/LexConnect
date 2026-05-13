@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Operational Events{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Operational Events</h1>
+        <p class="section-copy">Search recent audit, security, webhook, task, and system events captured for production operations.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <form method="get" class="filter-bar">
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search event, actor, path, or metadata">
+        <select name="source">
+            <option value="">All sources</option>
+            {% for value, label in source_choices %}
+                <option value="{{ value }}" {% if request.GET.source == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="level">
+            <option value="">All levels</option>
+            {% for value, label in level_choices %}
+                <option value="{{ value }}" {% if request.GET.level == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">Filter</button>
+        <a class="btn btn-secondary" href="{% url 'admin_operational_events' %}">Reset</a>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Source</th><th>Level</th><th>Event</th><th>Actor</th><th>Path</th><th>Summary</th></tr></thead>
+            <tbody>
+            {% for event in events %}
+                <tr>
+                    <td>{{ event.created_at|date:"d M H:i:s" }}</td>
+                    <td><span class="chip">{{ event.get_source_display }}</span></td>
+                    <td><span class="status-{{ event.level }}">{{ event.get_level_display }}</span></td>
+                    <td>{{ event.event }}</td>
+                    <td>{% if event.actor %}{{ event.actor.username }}{% else %}<span class="muted">System</span>{% endif %}</td>
+                    <td class="muted">{{ event.method }} {{ event.path }}</td>
+                    <td>{{ event.summary|default:event.metadata|truncatechars:120 }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7"><div class="empty-card">No operational events match the current filters.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'includes/pagination.html' %}
+</section>
+{% endblock %}

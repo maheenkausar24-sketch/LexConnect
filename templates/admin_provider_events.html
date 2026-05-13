@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Provider Events{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Provider Events</h1>
+        <p class="section-copy">Inspect webhook processing, replay counts, failures, and payment/refund links.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <form method="get" class="filter-bar">
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search event, client, lawyer, or error">
+        <select name="status">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="provider">
+            <option value="">All providers</option>
+            {% for provider in provider_choices %}
+                <option value="{{ provider }}" {% if request.GET.provider == provider %}selected{% endif %}>{{ provider }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">Filter</button>
+        <a class="btn btn-secondary" href="{% url 'admin_provider_events' %}">Reset</a>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Provider</th><th>Event</th><th>Status</th><th>Replay</th><th>Payment</th><th>Error</th><th>Inspect</th></tr></thead>
+            <tbody>
+            {% for event in events %}
+                <tr>
+                    <td>{{ event.created_at|date:"d M H:i:s" }}</td>
+                    <td>{{ event.provider }}</td>
+                    <td>
+                        <strong>{{ event.event_type }}</strong>
+                        <div class="muted">{{ event.event_id }}</div>
+                    </td>
+                    <td><span class="status-{{ event.processing_status }}">{{ event.get_processing_status_display }}</span></td>
+                    <td>{{ event.replay_count }}</td>
+                    <td>
+                        {% if event.payment %}
+                            <a class="file-link" href="{% url 'admin_payment_timeline' event.payment.id %}">Payment #{{ event.payment.id }}</a>
+                        {% else %}
+                            <span class="muted">Unmatched</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.error_message|default:""|truncatechars:80 }}</td>
+                    <td><a class="btn btn-secondary" href="{% url 'admin_provider_event_detail' event.id %}">Open</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8"><div class="empty-card">No provider events match the current filters.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'includes/pagination.html' %}
+</section>
+{% endblock %}

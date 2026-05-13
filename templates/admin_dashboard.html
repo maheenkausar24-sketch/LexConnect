@@ -59,6 +59,27 @@
     <a class="btn btn-secondary" href="{% url 'admin_clients' %}">Manage Clients</a>
     <a class="btn btn-secondary" href="{% url 'admin_bookings' %}">Manage Bookings</a>
     <a class="btn btn-secondary" href="{% url 'admin_payments' %}">Manage Payments</a>
+    <a class="btn btn-secondary" href="{% url 'admin_operational_events' %}">Audit Events</a>
+    <a class="btn btn-secondary" href="{% url 'admin_provider_events' %}">Webhooks</a>
+    <a class="btn btn-secondary" href="{% url 'admin_health' %}">Health</a>
+</section>
+
+<section class="grid grid-3 ops-strip" style="margin-bottom:24px;">
+    <div class="metric-card">
+        <span>System health</span>
+        <strong><span class="status-{{ health_report.status }}">{{ health_report.status|title }}</span></strong>
+        <small class="muted">Database, cache, channels, and queue indicators.</small>
+    </div>
+    <div class="metric-card">
+        <span>Task failures</span>
+        <strong>{{ stats.failed_tasks }}</strong>
+        <small class="muted"><a class="file-link" href="{% url 'admin_task_events' %}">Open task events</a></small>
+    </div>
+    <div class="metric-card">
+        <span>Security events</span>
+        <strong>{{ stats.security_warnings }}</strong>
+        <small class="muted">Stored operational security warnings.</small>
+    </div>
 </section>
 
 <section class="grid grid-3">
@@ -100,6 +121,33 @@
                 </div>
             {% empty %}
                 <div class="empty-card">No payments yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px;">
+    <div class="panel">
+        <div class="section-head"><h3>Operational Health</h3><a class="file-link" href="{% url 'admin_health' %}">Open health</a></div>
+        <div class="dashboard-list">
+            {% for check in health_report.checks %}
+                <div class="list-row">
+                    <strong>{{ check.name|title }}</strong>
+                    <span><span class="status-{{ check.status }}">{{ check.status|title }}</span> <span class="muted">{{ check.detail }}</span></span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Recent Operations</h3><a class="file-link" href="{% url 'admin_operational_events' %}">Open audit</a></div>
+        <div class="dashboard-list">
+            {% for event in recent_operations %}
+                <a class="list-row" href="{% url 'admin_operational_events' %}?q={{ event.event }}">
+                    <strong>{{ event.event }}</strong>
+                    <span class="muted">{{ event.get_source_display }} &middot; {{ event.get_level_display }} &middot; {{ event.created_at|date:"d M H:i" }}</span>
+                </a>
+            {% empty %}
+                <div class="empty-card">No operational events have been recorded yet.</div>
             {% endfor %}
         </div>
     </div>

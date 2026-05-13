@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.db import DatabaseError, OperationalError
 from django.utils import timezone
 
+from .audit import record_operational_event
 from .models import Notification, Payment, ProviderEvent
 from .services.payments import process_provider_webhook, reconcile_payment_ledger
 from .utils import create_notification_record, mark_stale_users_offline
@@ -103,6 +104,13 @@ def retry_failed_provider_events(self, limit=50):
                     "replay_count": event["replay_count"],
                 }
             )
+            record_operational_event(
+                "webhook",
+                "provider_webhook_dead_lettered",
+                level="error",
+                summary=f"{event['provider']}:{event['event_id']} exceeded retry budget.",
+                metadata={"task_id": self.request.id, **event},
+            )
             continue
         process_stored_provider_event_task.delay(event["provider"], event["payload"])
         queued += 1
@@ -152,6 +160,13 @@ def mark_stale_users_offline_task(self):
 @task_retry.connect
 def log_task_retry(sender=None, request=None, reason=None, **kwargs):
     task_logger.warning({"event": "task_retry", "task": getattr(sender, "name", ""), "task_id": getattr(request, "id", ""), "reason": str(reason)})
+    record_operational_event(
+        "task",
+        "task_retry",
+        level="warning",
+        summary=f"{getattr(sender, 'name', '')} retry scheduled.",
+        metadata={"task": getattr(sender, "name", ""), "task_id": getattr(request, "id", ""), "reason": str(reason)},
+    )
 
 
 @task_failure.connect
@@ -163,6 +178,17 @@ def log_task_failure(sender=None, task_id=None, exception=None, args=None, kwarg
             "task_id": task_id,
             "exception": exception.__class__.__name__ if exception else "",
         }
+    )
+    record_operational_event(
+        "task",
+        "task_failed_dead_letter",
+        level="error",
+        summary=f"{getattr(sender, 'name', '')} failed.",
+        metadata={
+            "task": getattr(sender, "name", ""),
+            "task_id": task_id,
+            "exception": exception.__class__.__name__ if exception else "",
+        },
     )
 
 

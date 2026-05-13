@@ -7,7 +7,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
-from ..audit import audit_event
+from ..audit import audit_event, record_operational_event
 from ..models import Booking, BookingStatusHistory, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory
 from .bookings import transition_booking_status
 from .payment_providers import get_payment_provider, payload_hash, verify_provider_event as provider_event_verified
@@ -402,6 +402,18 @@ def process_provider_webhook(provider, payload, *, signature="", trusted_stored_
             provider_event.processing_status = ProviderEvent.ProcessingStatus.FAILED
             provider_event.error_message = str(exc)
             provider_event.save(update_fields=["processing_status", "error_message", "updated_at"])
+            record_operational_event(
+                "webhook",
+                "provider_webhook_processing_failed",
+                level="error",
+                summary=f"{provider} {provider_event.event_id} failed: {str(exc)[:160]}",
+                metadata={
+                    "provider": provider,
+                    "provider_event_id": provider_event.event_id,
+                    "event_type": provider_event.event_type,
+                    "error": str(exc),
+                },
+            )
             webhook_logger.exception(
                 {
                     "event": "provider_webhook_processing_failed",

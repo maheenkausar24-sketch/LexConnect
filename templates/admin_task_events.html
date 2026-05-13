@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Task Events{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Task Events</h1>
+        <p class="section-copy">Recent Celery task retries and failures captured by task signal hooks.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Level</th><th>Event</th><th>Summary</th><th>Metadata</th></tr></thead>
+            <tbody>
+            {% for event in events %}
+                <tr>
+                    <td>{{ event.created_at|date:"d M H:i:s" }}</td>
+                    <td><span class="status-{{ event.level }}">{{ event.get_level_display }}</span></td>
+                    <td>{{ event.event }}</td>
+                    <td>{{ event.summary }}</td>
+                    <td class="muted">{{ event.metadata|truncatechars:140 }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5"><div class="empty-card">No task failures or retries have been recorded.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

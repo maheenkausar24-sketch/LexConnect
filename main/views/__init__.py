@@ -4,7 +4,11 @@ from .admin_panel import (
     admin_clients,
     admin_dashboard,
     admin_lawyers,
+    admin_operational_events,
     admin_payments,
+    admin_payment_timeline,
+    admin_provider_event_detail,
+    admin_provider_events,
     admin_update_lawyer_verification,
     admin_update_payment,
     admin_update_user_status,
@@ -24,6 +28,7 @@ from .bookings import (
 from .chat import chat_messages, chat_page, send_message, start_chat, user_chats
 from .media import protected_case_document, protected_certificate_file, protected_chat_file
 from .notifications import mark_notification_read, notifications_view
+from .operations import admin_health, admin_task_events, health_live, health_ready
 from .pages import (
     client_bookings,
     client_chats,

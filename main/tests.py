@@ -17,7 +17,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .consumers import ChatConsumer
-from .models import Booking, Chat, LawCategory, Lawyer, LawyerAvailability, Notification, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory, Review, UserProfile
+from .audit import audit_event
+from .models import Booking, Chat, LawCategory, Lawyer, LawyerAvailability, Notification, OperationalEvent, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory, Review, UserProfile
 from .management.commands.prepare_demo import DEMO_CLIENT_USERNAME, DEMO_LAWYER_COUNT, DEMO_LAWYER_PASSWORD
 from .services import bookings as booking_services
 from .services import payments as payment_services
@@ -1089,3 +1090,28 @@ class LexConnectFlowTests(TestCase):
 
         self.assertIsNotNone(result)
         self.assertTrue(Notification.objects.filter(user=user, title="Async notice").exists())
+
+    def test_health_ready_reports_core_checks(self):
+        response = self.client.get(reverse("health_ready"))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "ok")
+        self.assertIn("database", {check["name"] for check in payload["checks"]})
+        self.assertIn("cache", {check["name"] for check in payload["checks"]})
+
+    def test_admin_operational_pages_are_available(self):
+        admin_user = self.create_admin(username="ops_admin", email="ops_admin@example.com")
+        audit_event("ops_test_event", actor=admin_user, metadata={"area": "phase4c"})
+        self.client.force_login(admin_user)
+
+        for route in [
+            "admin_operational_events",
+            "admin_provider_events",
+            "admin_health",
+            "admin_task_events",
+        ]:
+            response = self.client.get(reverse(route))
+            self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(OperationalEvent.objects.filter(event="ops_test_event").exists())
