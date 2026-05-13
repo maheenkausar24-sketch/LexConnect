@@ -24,9 +24,9 @@
         </div>
         <div class="card">
             <strong>Linked Booking</strong>
-            <p class="muted">#{{ chat.booking.id }} &middot; {{ chat.booking.get_status_display }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
+            <p class="muted">#{{ chat.booking.id }} &middot; {{ chat.booking.get_status_display }} &middot; {{ chat.booking.payment.get_payment_status_display }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
         </div>
-        <div class="footer-note">Messages appear instantly using WebSockets powered by Django Channels.</div>
+        <div class="footer-note">Chat stays usable during reconnects with automatic missed-message sync.</div>
     </aside>
 
     <section class="chat-room">
@@ -36,6 +36,7 @@
                     <h3>{% if request.user.profile.is_lawyer %}{{ chat.client.username }}{% else %}{{ chat.lawyer.name }}{% endif %}</h3>
                     <p class="muted">{% if request.user.profile.is_lawyer %}Client{% else %}{{ chat.lawyer.status_label }}{% endif %}</p>
                 </div>
+                <span class="connection-pill" data-connection-status>Connecting</span>
             </div>
         </div>
 

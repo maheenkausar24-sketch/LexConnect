@@ -4,19 +4,40 @@
 <div class="section-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">Welcome back, {{ request.user.username }}</h1>
-        <p class="section-copy">Client panel: browse lawyers, book a visible slot, complete demo payment, move into chat, then return after completion to leave a review.</p>
+        <p class="section-copy">Client platform: track bookings, payment readiness, consultation chats, and next actions from one focused workspace.</p>
     </div>
-    <a class="btn btn-primary" href="{% url 'chatbot' %}">Ask Lexora</a>
+    <div class="hero-actions">
+        <a class="btn btn-primary" href="#legal-categories">Find Lawyers</a>
+        <a class="btn btn-secondary" href="{% url 'client_bookings' %}">All Bookings</a>
+    </div>
 </div>
 
-<section class="grid grid-4" style="margin-bottom:24px;">
+<section class="grid grid-4 dashboard-kpis" style="margin-bottom:24px;">
     <div class="stat-card"><span class="muted">Categories</span><strong>{{ categories|length }}</strong></div>
     <div class="stat-card"><span class="muted">Active chats</span><strong>{{ recent_chats|length }}</strong></div>
-    <div class="stat-card"><span class="muted">Total bookings</span><strong>{{ booking_total }}</strong></div>
-    <div class="stat-card"><span class="muted">Completed consultations</span><strong>{{ completed_total }}</strong></div>
+    <div class="stat-card"><span class="muted">Total bookings</span><strong>{{ booking_summary.total|default:0 }}</strong></div>
+    <div class="stat-card"><span class="muted">Needs payment</span><strong>{{ payment_summary.action_needed|default:0 }}</strong></div>
 </section>
 
-<section class="panel" style="margin-bottom:24px;">
+<section class="grid grid-3 ops-strip" style="margin-bottom:24px;">
+    <div class="metric-card">
+        <span>Confirmed consultations</span>
+        <strong>{{ booking_summary.confirmed|default:0 }}</strong>
+        <small class="muted">Ready for chat once payment is successful.</small>
+    </div>
+    <div class="metric-card">
+        <span>Awaiting verification</span>
+        <strong>{{ payment_summary.awaiting|default:0 }}</strong>
+        <small class="muted">Demo payments waiting on admin review.</small>
+    </div>
+    <div class="metric-card">
+        <span>Completed consultations</span>
+        <strong>{{ booking_summary.completed|default:0 }}</strong>
+        <small class="muted">Eligible for review from lawyer profiles.</small>
+    </div>
+</section>
+
+<section id="legal-categories" class="panel" style="margin-bottom:24px;">
     <div class="section-head">
         <h2>Browse Legal Categories</h2>
         <span class="muted">Choose your legal problem and connect with the right expert.</span>
@@ -34,7 +55,10 @@
 
 <section class="grid grid-2">
     <div class="panel">
-        <div class="section-head"><h3>Recent Bookings</h3></div>
+        <div class="section-head">
+            <h3>Recent Bookings</h3>
+            <a class="file-link" href="{% url 'client_bookings' %}">View all</a>
+        </div>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Lawyer</th><th>Schedule</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
@@ -72,14 +96,14 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="5" class="muted">No bookings yet.</td></tr>
+                    <tr><td colspan="5"><div class="empty-card">No bookings yet. Start with a legal category above.</div></td></tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
     <div class="panel">
-        <div class="section-head"><h3>Recent Payments</h3></div>
+        <div class="section-head"><h3>Recent Payments</h3><span class="muted">{{ payment_summary.successful|default:0 }} successful</span></div>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Booking</th><th>Amount</th><th>Status</th></tr></thead>
@@ -91,10 +115,39 @@
                         <td><span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span></td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="3" class="muted">No payments yet.</td></tr>
+                    <tr><td colspan="3"><div class="empty-card">No payments yet. A payment record appears after booking.</div></td></tr>
                 {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px;">
+    <div class="panel">
+        <div class="section-head"><h3>Recent Chats</h3><a class="file-link" href="{% url 'client_chats' %}">Open inbox</a></div>
+        <div class="dashboard-list">
+            {% for chat in recent_chats %}
+                <a class="list-row" href="{% url 'chat_page' chat.id %}">
+                    <strong>{{ chat.lawyer.name }}</strong>
+                    <span class="muted">Booking #{{ chat.booking.id }} &middot; {{ chat.updated_at|date:"d M, h:i A" }}{% if chat.unread_count %} &middot; {{ chat.unread_count }} unread{% endif %}</span>
+                </a>
+            {% empty %}
+                <div class="empty-card">Paid consultation chats will appear here.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Recent Activity</h3><a class="file-link" href="{% url 'notifications' %}">Notifications</a></div>
+        <div class="dashboard-list">
+            {% for notification in recent_notifications %}
+                <a class="list-row" href="{{ notification.url|default:'#' }}">
+                    <strong>{{ notification.title }}</strong>
+                    <span class="muted">{{ notification.message|truncatechars:90 }}</span>
+                </a>
+            {% empty %}
+                <div class="empty-card">No recent notifications yet.</div>
+            {% endfor %}
         </div>
     </div>
 </section>

@@ -2,16 +2,31 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.core.paginator import Paginator
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ..decorators import client_required, lawyer_required
 from ..forms import LawyerAvailabilityForm, LawyerSearchForm, ReviewForm
-from ..models import Booking, Chat, LawCategory, Lawyer, Payment
+from ..models import Booking, Chat, LawCategory, Payment
 from ..services.auth import get_dashboard_route, is_client_user, lawyer_accounts_queryset
 from ..services.bookings import eligible_booking_for_chat, eligible_review_bookings, get_client_bookings_queryset, get_lawyer_bookings_queryset
 from ..services.lawyers import available_lawyers_queryset, filter_lawyers_queryset, paginate_queryset, visible_lawyers_queryset
+
+
+def paginate_list(queryset, page_number, per_page=20):
+    return Paginator(queryset, per_page).get_page(page_number)
+
+
+def filter_booking_list(queryset, params):
+    status = (params.get("status") or "").strip()
+    payment_status = (params.get("payment_status") or "").strip()
+    if status:
+        queryset = queryset.filter(status=status)
+    if payment_status:
+        queryset = queryset.filter(payment__payment_status=payment_status)
+    return queryset
 
 
 def home(request):
@@ -29,9 +44,25 @@ def dashboard(request):
 def client_dashboard(request):
     categories = LawCategory.objects.all()
     featured_lawyers = available_lawyers_queryset()[:6]
-    recent_bookings = get_client_bookings_queryset(request.user)[:8]
+    client_bookings = get_client_bookings_queryset(request.user)
+    recent_bookings = client_bookings[:8]
     recent_payments = Payment.objects.filter(booking__client=request.user).select_related("booking", "booking__lawyer")[:5]
-    recent_chats = Chat.objects.filter(client=request.user, booking__isnull=False).select_related("lawyer", "booking")[:5]
+    recent_chats = (
+        Chat.objects.filter(client=request.user, booking__isnull=False)
+        .select_related("lawyer", "lawyer__category", "booking")
+        .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+    )[:5]
+    booking_summary = client_bookings.aggregate(
+        total=Count("id"),
+        pending=Count("id", filter=Q(status=Booking.Status.PENDING)),
+        confirmed=Count("id", filter=Q(status=Booking.Status.CONFIRMED)),
+        completed=Count("id", filter=Q(status=Booking.Status.COMPLETED)),
+    )
+    payment_summary = Payment.objects.filter(booking__client=request.user).aggregate(
+        awaiting=Count("id", filter=Q(payment_status=Payment.PaymentStatus.AWAITING_VERIFICATION)),
+        action_needed=Count("id", filter=Q(payment_status__in=[Payment.PaymentStatus.PENDING, Payment.PaymentStatus.FAILED])),
+        successful=Count("id", filter=Q(payment_status=Payment.PaymentStatus.SUCCESS)),
+    )
 
     return render(
         request,
@@ -42,21 +73,39 @@ def client_dashboard(request):
             "recent_bookings": recent_bookings,
             "recent_payments": recent_payments,
             "recent_chats": recent_chats,
-            "booking_total": Booking.objects.filter(client=request.user).count(),
-            "completed_total": Booking.objects.filter(client=request.user, status=Booking.Status.COMPLETED).count(),
+            "recent_notifications": request.user.notifications.all()[:5],
+            "booking_summary": booking_summary,
+            "payment_summary": payment_summary,
         },
     )
 
 
 @client_required
 def client_bookings(request):
-    bookings = get_client_bookings_queryset(request.user)
-    return render(request, "client_bookings.html", {"bookings": bookings})
+    bookings = filter_booking_list(get_client_bookings_queryset(request.user), request.GET)
+    bookings_page = paginate_list(bookings, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    return render(
+        request,
+        "client_bookings.html",
+        {
+            "bookings": bookings_page,
+            "page_obj": bookings_page,
+            "querystring": query_params.urlencode(),
+            "booking_status_choices": Booking.Status.choices,
+            "payment_status_choices": Payment.PaymentStatus.choices,
+        },
+    )
 
 
 @client_required
 def client_chats(request):
-    chats = Chat.objects.filter(client=request.user, booking__isnull=False).select_related("lawyer", "booking")
+    chats = (
+        Chat.objects.filter(client=request.user, booking__isnull=False)
+        .select_related("lawyer", "lawyer__category", "booking", "booking__payment")
+        .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+    )
     return render(
         request,
         "user_chats.html",
@@ -71,12 +120,26 @@ def client_chats(request):
 @lawyer_required
 def lawyer_dashboard(request):
     lawyer = request.user.lawyer_profile
-    incoming_bookings = get_lawyer_bookings_queryset(lawyer)[:12]
-    active_chats = lawyer.chats.filter(booking__isnull=False).select_related("client", "booking")[:8]
-    earnings = Payment.objects.filter(
+    lawyer_bookings = get_lawyer_bookings_queryset(lawyer)
+    incoming_bookings = lawyer_bookings[:12]
+    active_chats = (
+        lawyer.chats.filter(booking__isnull=False)
+        .select_related("client", "booking", "booking__payment")
+        .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+    )[:8]
+    payment_summary = Payment.objects.filter(
         booking__lawyer=lawyer,
-        payment_status=Payment.PaymentStatus.SUCCESS,
-    ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    ).aggregate(
+        total=Sum("amount", filter=Q(payment_status=Payment.PaymentStatus.SUCCESS)),
+        awaiting=Count("id", filter=Q(payment_status=Payment.PaymentStatus.AWAITING_VERIFICATION)),
+        successful=Count("id", filter=Q(payment_status=Payment.PaymentStatus.SUCCESS)),
+    )
+    booking_summary = lawyer_bookings.aggregate(
+        total=Count("id"),
+        pending=Count("id", filter=Q(status=Booking.Status.PENDING)),
+        confirmed=Count("id", filter=Q(status=Booking.Status.CONFIRMED)),
+        completed=Count("id", filter=Q(status=Booking.Status.COMPLETED)),
+    )
 
     return render(
         request,
@@ -85,10 +148,10 @@ def lawyer_dashboard(request):
             "lawyer": lawyer,
             "incoming_bookings": incoming_bookings,
             "active_chats": active_chats,
-            "earnings": earnings,
-            "availability_slots": lawyer.availability_slots.all(),
-            "confirmed_total": Booking.objects.filter(lawyer=lawyer, status=Booking.Status.CONFIRMED).count(),
-            "completed_total": Booking.objects.filter(lawyer=lawyer, status=Booking.Status.COMPLETED).count(),
+            "earnings": payment_summary["total"] or Decimal("0.00"),
+            "availability_slots": lawyer.availability_slots.filter(is_active=True).order_by("weekday", "start_time")[:8],
+            "booking_summary": booking_summary,
+            "payment_summary": payment_summary,
         },
     )
 
@@ -96,8 +159,22 @@ def lawyer_dashboard(request):
 @lawyer_required
 def lawyer_bookings(request):
     lawyer = request.user.lawyer_profile
-    bookings = get_lawyer_bookings_queryset(lawyer)
-    return render(request, "lawyer_bookings.html", {"lawyer": lawyer, "bookings": bookings})
+    bookings = filter_booking_list(get_lawyer_bookings_queryset(lawyer), request.GET)
+    bookings_page = paginate_list(bookings, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    return render(
+        request,
+        "lawyer_bookings.html",
+        {
+            "lawyer": lawyer,
+            "bookings": bookings_page,
+            "page_obj": bookings_page,
+            "querystring": query_params.urlencode(),
+            "booking_status_choices": Booking.Status.choices,
+            "payment_status_choices": Payment.PaymentStatus.choices,
+        },
+    )
 
 
 @lawyer_required
@@ -116,7 +193,11 @@ def lawyer_availability(request):
 
 @lawyer_required
 def lawyer_chats(request):
-    chats = Chat.objects.filter(lawyer=request.user.lawyer_profile, booking__isnull=False).select_related("client", "booking")
+    chats = (
+        Chat.objects.filter(lawyer=request.user.lawyer_profile, booking__isnull=False)
+        .select_related("client", "booking", "booking__payment")
+        .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+    )
     return render(
         request,
         "user_chats.html",

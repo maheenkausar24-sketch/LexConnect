@@ -14,9 +14,15 @@ from ..services.admin_panel import (
     admin_clients_queryset,
     admin_dashboard_stats,
     admin_force_cancel_booking,
+    admin_refunds_queryset,
+    filter_admin_bookings_queryset,
+    filter_admin_clients_queryset,
+    filter_admin_lawyers_queryset,
+    filter_admin_payments_queryset,
     admin_lawyers_queryset,
     admin_payments_queryset,
     admin_update_payment_status,
+    paginate_queryset,
     set_lawyer_verification,
     set_user_active_state,
 )
@@ -35,30 +41,44 @@ def admin_dashboard(request):
             "pending_lawyers": admin_lawyers_queryset().filter(verification_status__in=["pending", "under_review"])[:8],
             "recent_bookings": admin_bookings_queryset()[:8],
             "recent_payments": admin_payments_queryset()[:8],
+            "recent_refunds": admin_refunds_queryset()[:6],
         },
     )
 
 
 @admin_required
 def admin_lawyers(request):
+    lawyers = filter_admin_lawyers_queryset(admin_lawyers_queryset(), request.GET)
+    lawyers_page = paginate_queryset(lawyers, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
     return render(
         request,
         "admin_lawyers.html",
         {
-            "lawyers": admin_lawyers_queryset(),
+            "lawyers": lawyers_page,
+            "page_obj": lawyers_page,
+            "querystring": query_params.urlencode(),
             "verification_form": AdminLawyerVerificationForm(),
             "user_status_form": AdminUserStatusForm(),
+            "verification_choices": Lawyer.VerificationStatus.choices,
         },
     )
 
 
 @admin_required
 def admin_clients(request):
+    clients = filter_admin_clients_queryset(admin_clients_queryset(), request.GET)
+    clients_page = paginate_queryset(clients, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
     return render(
         request,
         "admin_clients.html",
         {
-            "clients": admin_clients_queryset(),
+            "clients": clients_page,
+            "page_obj": clients_page,
+            "querystring": query_params.urlencode(),
             "user_status_form": AdminUserStatusForm(),
         },
     )
@@ -66,17 +86,39 @@ def admin_clients(request):
 
 @admin_required
 def admin_bookings(request):
-    return render(request, "admin_bookings.html", {"bookings": admin_bookings_queryset()})
+    bookings = filter_admin_bookings_queryset(admin_bookings_queryset(), request.GET)
+    bookings_page = paginate_queryset(bookings, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    return render(
+        request,
+        "admin_bookings.html",
+        {
+            "bookings": bookings_page,
+            "page_obj": bookings_page,
+            "querystring": query_params.urlencode(),
+            "booking_status_choices": Booking.Status.choices,
+            "payment_status_choices": Payment.PaymentStatus.choices,
+        },
+    )
 
 
 @admin_required
 def admin_payments(request):
+    payments = filter_admin_payments_queryset(admin_payments_queryset(), request.GET)
+    payments_page = paginate_queryset(payments, request.GET.get("page"), per_page=20)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
     return render(
         request,
         "admin_payments.html",
         {
-            "payments": admin_payments_queryset(),
+            "payments": payments_page,
+            "page_obj": payments_page,
+            "querystring": query_params.urlencode(),
             "payment_form": AdminPaymentStatusForm(),
+            "payment_status_choices": Payment.PaymentStatus.choices,
+            "provider_choices": Payment.objects.exclude(provider="").order_by("provider").values_list("provider", flat=True).distinct(),
         },
     )
 

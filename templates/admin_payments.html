@@ -10,17 +10,53 @@
 </div>
 
 <section class="panel">
+    <form method="get" class="filter-bar">
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search booking, client, lawyer, or transaction">
+        <select name="payment_status">
+            <option value="">All payment statuses</option>
+            {% for value, label in payment_status_choices %}
+                <option value="{{ value }}" {% if request.GET.payment_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="provider">
+            <option value="">All providers</option>
+            {% for provider in provider_choices %}
+                <option value="{{ provider }}" {% if request.GET.provider == provider %}selected{% endif %}>{{ provider }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">Filter</button>
+        <a class="btn btn-secondary" href="{% url 'admin_payments' %}">Reset</a>
+    </form>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Booking</th><th>Client</th><th>Lawyer</th><th>Amount</th><th>Status</th><th>Update</th></tr></thead>
+            <thead><tr><th>Booking</th><th>Client</th><th>Lawyer</th><th>Provider</th><th>Amount</th><th>Status</th><th>Refunds</th><th>Update</th></tr></thead>
             <tbody>
             {% for payment in payments %}
                 <tr>
                     <td>#{{ payment.booking.id }}</td>
                     <td>{{ payment.booking.client.username }}</td>
                     <td>{{ payment.booking.lawyer.name }}</td>
+                    <td>
+                        <strong>{{ payment.provider }}</strong>
+                        {% if payment.transaction_id %}
+                            <div class="muted">{{ payment.transaction_id }}</div>
+                        {% elif payment.provider_payment_id %}
+                            <div class="muted">{{ payment.provider_payment_id }}</div>
+                        {% endif %}
+                    </td>
                     <td>&#8377;{{ payment.amount }}</td>
                     <td><span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span></td>
+                    <td>
+                        {% with refunds=payment.refund_requests.all %}
+                        {% if refunds %}
+                            {% for refund in refunds %}
+                                <span class="status-{{ refund.status }}">#{{ refund.id }} {{ refund.get_status_display }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="muted">None</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
                     <td>
                         <form method="post" action="{% url 'admin_update_payment' payment.id %}" class="inline-meta">
                             {% csrf_token %}
@@ -34,10 +70,11 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6" class="muted">No payments found.</td></tr>
+                <tr><td colspan="8"><div class="empty-card">No payments match the current filters.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 </section>
 {% endblock %}

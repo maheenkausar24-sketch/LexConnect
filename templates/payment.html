@@ -27,7 +27,8 @@
         </div>
         <div class="card">
             <strong>Payment status</strong>
-            <p class="muted">{{ payment.get_payment_status_display }}</p>
+            <p><span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span></p>
+            <p class="muted">{{ payment.provider }}{% if payment.transaction_id %} &middot; {{ payment.transaction_id }}{% endif %}</p>
         </div>
     </div>
     {% if payment.payment_status == 'success' %}
@@ -41,6 +42,9 @@
         <a class="btn btn-secondary" href="{% url 'client_bookings' %}">Back to Client Bookings</a>
     </div>
     {% else %}
+    {% if payment.payment_status == 'failed' %}
+        <div class="error-message" style="margin-top:24px;">The previous payment attempt failed. Request verification again after checking the booking details.</div>
+    {% endif %}
     <form method="post" style="margin-top:24px;" class="inline-meta">
         {% csrf_token %}
         <input type="hidden" name="payment_status" value="awaiting_verification">

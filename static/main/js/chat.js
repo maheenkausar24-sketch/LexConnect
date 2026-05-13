@@ -20,6 +20,7 @@
     const removeButton = root.querySelector("[data-remove-preview]");
     const sendButton = root.querySelector("[data-send-button]");
     const micButton = root.querySelector("[data-mic-button]");
+    const connectionStatus = root.querySelector("[data-connection-status]");
     const wsPath = root.dataset.wsPath;
     const sendUrl = root.dataset.sendUrl;
     const messagesUrl = root.dataset.messagesUrl;
@@ -28,6 +29,7 @@
     let reconnectTimer = null;
     let reconnectAttempts = 0;
     let pollingTimer = null;
+    let heartbeatTimer = null;
     let closedManually = false;
     let isPolling = false;
     let lastMessageId = 0;
@@ -45,6 +47,14 @@
 
     function getEmptyState() {
         return messagesBox.querySelector("[data-empty-state]");
+    }
+
+    function setConnectionState(state, label) {
+        if (!connectionStatus) {
+            return;
+        }
+        connectionStatus.textContent = label;
+        connectionStatus.dataset.state = state;
     }
 
     function removeEmptyState() {
@@ -319,6 +329,7 @@
         if (!messagesUrl || pollingTimer) {
             return;
         }
+        setConnectionState("syncing", "Reconnecting");
         pollingTimer = window.setInterval(function () {
             fetchMissedMessages();
         }, 3000);
@@ -330,6 +341,25 @@
         }
         window.clearInterval(pollingTimer);
         pollingTimer = null;
+    }
+
+    function startHeartbeat() {
+        if (heartbeatTimer) {
+            return;
+        }
+        heartbeatTimer = window.setInterval(function () {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "ping" }));
+            }
+        }, 25000);
+    }
+
+    function stopHeartbeat() {
+        if (!heartbeatTimer) {
+            return;
+        }
+        window.clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
     }
 
     function fetchMissedMessages() {
@@ -388,14 +418,25 @@
         }
 
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        setConnectionState("connecting", "Connecting");
         socket = new WebSocket(protocol + "://" + window.location.host + wsPath);
         socket.onopen = function () {
             reconnectAttempts = 0;
+            setConnectionState("online", "Live");
             stopPolling();
+            startHeartbeat();
             fetchMissedMessages();
         };
         socket.onmessage = function (event) {
-            const payload = JSON.parse(event.data);
+            let payload = {};
+            try {
+                payload = JSON.parse(event.data);
+            } catch (error) {
+                return;
+            }
+            if (payload.type === "pong") {
+                return;
+            }
             if (payload.client_temp_id && pendingMessages.has(payload.client_temp_id)) {
                 reconcilePendingMessage(payload.client_temp_id, payload);
                 return;
@@ -405,11 +446,19 @@
             });
         };
         socket.onerror = function () {
+            setConnectionState("syncing", "Syncing");
             startPolling();
         };
-        socket.onclose = function () {
+        socket.onclose = function (event) {
             socket = null;
+            stopHeartbeat();
             startPolling();
+            if (event.code === 4400 || event.code === 4403) {
+                stopPolling();
+                setConnectionState("offline", "Chat unavailable");
+                closedManually = true;
+                return;
+            }
             scheduleReconnect();
         };
     }
@@ -527,11 +576,21 @@
     window.addEventListener("beforeunload", function () {
         closedManually = true;
         stopPolling();
+        stopHeartbeat();
         if (reconnectTimer) {
             window.clearTimeout(reconnectTimer);
         }
         if (socket) {
             socket.close();
+        }
+    });
+
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) {
+            fetchMissedMessages();
+            if (!socket || socket.readyState === WebSocket.CLOSED) {
+                setupSocket();
+            }
         }
     });
 

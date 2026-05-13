@@ -453,6 +453,38 @@ button[disabled] {
     margin-top: 12px;
 }
 
+.ops-strip .metric-card {
+    margin-top: 0;
+}
+
+.ops-strip small,
+.admin-stat-card small {
+    line-height: 1.45;
+}
+
+.dashboard-kpis .stat-card {
+    min-height: 112px;
+}
+
+.dashboard-list {
+    display: grid;
+    gap: 12px;
+}
+
+.list-row {
+    display: grid;
+    gap: 4px;
+    padding: 14px;
+    border-radius: 14px;
+    background: var(--surface-muted);
+    border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.list-row:hover {
+    background: #fff;
+    border-color: rgba(15, 118, 110, 0.18);
+}
+
 .availability-list {
     display: grid;
     gap: 10px;
@@ -570,6 +602,7 @@ button[disabled] {
 
 .table-wrap {
     overflow-x: auto;
+    margin-top: 16px;
 }
 
 .table-wrap form {
@@ -578,6 +611,7 @@ button[disabled] {
 
 table {
     width: 100%;
+    min-width: 860px;
     border-collapse: collapse;
 }
 
@@ -592,6 +626,26 @@ td {
 th {
     color: var(--text-muted);
     font-weight: 600;
+}
+
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-bar select,
+.filter-bar input {
+    min-height: 46px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 18px;
 }
 
 .form-shell {
@@ -687,6 +741,9 @@ select:focus {
 .status-confirmed,
 .status-accepted,
 .status-rejected,
+.status-requested,
+.status-processing,
+.status-processed,
 .status-success,
 .status-awaiting_verification,
 .status-failed,
@@ -706,7 +763,9 @@ select:focus {
 }
 
 .status-awaiting_verification,
-.status-rescheduled {
+.status-rescheduled,
+.status-requested,
+.status-processing {
     background: rgba(59, 130, 246, 0.12);
     color: #1d4ed8;
 }
@@ -716,7 +775,8 @@ select:focus {
     color: #1d4ed8;
 }
 
-.status-accepted {
+.status-accepted,
+.status-processed {
     background: rgba(22, 163, 74, 0.12);
     color: var(--success);
 }
@@ -748,7 +808,7 @@ select:focus {
 }
 
 .chat-shell {
-    max-width: 900px;
+    max-width: none;
     width: 100%;
     height: calc(100vh - 160px);
     min-height: 620px;
@@ -825,6 +885,35 @@ select:focus {
     font-size: 11px;
     color: var(--text-muted);
     text-align: right;
+}
+
+.connection-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.connection-pill[data-state="online"] {
+    background: rgba(22, 163, 74, 0.12);
+    color: var(--success);
+}
+
+.connection-pill[data-state="syncing"],
+.connection-pill[data-state="connecting"] {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+}
+
+.connection-pill[data-state="offline"] {
+    background: rgba(220, 38, 38, 0.12);
+    color: var(--danger);
 }
 
 .chat-attachment {
@@ -960,6 +1049,11 @@ select:focus {
 
     .chat-shell {
         height: auto;
+        min-height: 0;
+    }
+
+    .filter-bar {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
@@ -988,6 +1082,40 @@ select:focus {
     .availability-item {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .filter-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .pagination {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .chat-sidebar {
+        display: none;
+    }
+
+    .chat-room {
+        min-height: calc(100vh - 150px);
+    }
+
+    .chat-bubble {
+        max-width: 88%;
+    }
+
+    .chat-composer {
+        align-items: stretch;
+    }
+
+    .chat-input-wrap {
+        border-radius: 18px;
     }
 }
 

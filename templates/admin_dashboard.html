@@ -4,7 +4,7 @@
 <div class="section-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">Admin Control Panel</h1>
-        <p class="section-copy">Oversee users, lawyers, bookings, and payments from one demo-safe operations view.</p>
+        <p class="section-copy">Admin platform: monitor moderation queues, booking/payment health, refunds, and operational exceptions from one control view.</p>
     </div>
 </div>
 
@@ -22,12 +22,35 @@
     <div class="admin-stat-card">
         <span>Bookings</span>
         <strong>{{ stats.total_bookings }}</strong>
-        <small>{{ stats.completed_bookings }} completed consultations</small>
+        <small>{{ stats.pending_bookings }} pending, {{ stats.confirmed_bookings }} confirmed</small>
     </div>
     <div class="admin-stat-card">
         <span>Revenue</span>
         <strong>&#8377;{{ stats.total_revenue }}</strong>
-        <small>{{ stats.successful_payments }} successful payments</small>
+        <small>{{ stats.awaiting_payments }} awaiting review, {{ stats.failed_payments }} failed</small>
+    </div>
+</section>
+
+<section class="grid grid-4 ops-strip" style="margin-bottom:24px;">
+    <div class="metric-card">
+        <span>Lawyer moderation</span>
+        <strong>{{ stats.pending_lawyer_verifications }}</strong>
+        <small class="muted">Pending or under review.</small>
+    </div>
+    <div class="metric-card">
+        <span>Payment review</span>
+        <strong>{{ stats.awaiting_payments }}</strong>
+        <small class="muted">Demo payments awaiting action.</small>
+    </div>
+    <div class="metric-card">
+        <span>Open refunds</span>
+        <strong>{{ stats.open_refunds }}</strong>
+        <small class="muted">Requested or processing.</small>
+    </div>
+    <div class="metric-card">
+        <span>Webhook failures</span>
+        <strong>{{ stats.failed_provider_events }}</strong>
+        <small class="muted">Provider events needing retry review.</small>
     </div>
 </section>
 
@@ -67,7 +90,7 @@
         </div>
     </div>
     <div class="panel">
-        <div class="section-head"><h3>Recent Payments</h3></div>
+        <div class="section-head"><h3>Recent Payments</h3><a class="file-link" href="{% url 'admin_payments' %}">Open payments</a></div>
         <div class="grid">
             {% for payment in recent_payments %}
                 <div class="card">
@@ -79,6 +102,29 @@
                 <div class="empty-card">No payments yet.</div>
             {% endfor %}
         </div>
+    </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+    <div class="section-head"><h3>Refund Visibility</h3><span class="muted">Recent refund requests and outcomes</span></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Refund</th><th>Booking</th><th>Client</th><th>Lawyer</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for refund in recent_refunds %}
+                <tr>
+                    <td>#{{ refund.id }}</td>
+                    <td>#{{ refund.payment.booking.id }}</td>
+                    <td>{{ refund.payment.booking.client.username }}</td>
+                    <td>{{ refund.payment.booking.lawyer.name }}</td>
+                    <td>&#8377;{{ refund.amount }}</td>
+                    <td><span class="status-{{ refund.status }}">{{ refund.get_status_display }}</span></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6"><div class="empty-card">No refund activity yet.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 </section>
 {% endblock %}

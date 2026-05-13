@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.http import Http404
 
-from ..models import Booking, Chat, Message, Payment, UserProfile
+from ..models import Booking, Chat, Message, Notification, Payment, UserProfile
 from ..utils import broadcast_chat_message, create_notification, serialize_message
 
 
@@ -14,7 +14,7 @@ def get_or_create_chat_for_booking(booking):
 
 
 def _chat_access_queryset():
-    return Chat.objects.select_related("client", "lawyer", "lawyer__user", "booking", "booking__payment")
+    return Chat.objects.select_related("client", "lawyer", "lawyer__category", "lawyer__user", "booking", "booking__payment")
 
 
 def get_authorized_chat(user, chat_id):
@@ -41,6 +41,7 @@ def send_chat_message(chat, user, *, text="", file=None, client_temp_id=""):
         "New message",
         f"New chat message from {user.get_full_name() or user.username}.",
         f"/chat-room/{chat.id}/",
+        notification_type=Notification.NotificationType.CHAT,
     )
     broadcast_chat_message(message, client_temp_id=client_temp_id)
     payload = serialize_message(message, user)

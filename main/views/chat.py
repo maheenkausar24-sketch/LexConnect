@@ -61,7 +61,9 @@ def chat_messages(request, chat_id):
     if after.isdigit():
         messages_qs = messages_qs.filter(id__gt=int(after))
 
-    return JsonResponse({"messages": [serialize_message(message, request.user) for message in messages_qs]})
+    payload = [serialize_message(message, request.user) for message in messages_qs]
+    messages_qs.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
+    return JsonResponse({"messages": payload})
 
 
 @login_required

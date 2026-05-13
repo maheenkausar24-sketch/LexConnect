@@ -58,7 +58,7 @@ def lock_booking_for_update(booking):
 
 
 def get_client_bookings_queryset(user):
-    return Booking.objects.filter(client=user).select_related("lawyer", "payment").order_by("-created_at")
+    return Booking.objects.filter(client=user).select_related("lawyer", "lawyer__category", "payment").order_by("-created_at")
 
 
 def get_lawyer_bookings_queryset(lawyer):

@@ -4,7 +4,7 @@
 <div class="section-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">{{ lawyer.name }}'s Dashboard</h1>
-        <p class="section-copy">{{ lawyer.category.name }} &middot; {{ lawyer.get_verification_status_display }} &middot; {{ lawyer.status_label }} &middot; &#8377;{{ lawyer.fee }} per consultation. Use this panel to monitor bookings, availability, and active client chats.</p>
+        <p class="section-copy">Lawyer platform: monitor consultation readiness, payment status, availability coverage, and active client chats without leaving your workflow.</p>
     </div>
     <form method="post" action="{% url 'toggle_lawyer_status' %}">
         {% csrf_token %}
@@ -14,12 +14,29 @@
     </form>
 </div>
 
-<section class="grid grid-3" style="margin-bottom:24px;">
-    <div class="stat-card"><span class="muted">Bookings</span><strong>{{ incoming_bookings|length }}</strong></div>
+<section class="grid grid-4 dashboard-kpis" style="margin-bottom:24px;">
+    <div class="stat-card"><span class="muted">Bookings</span><strong>{{ booking_summary.total|default:0 }}</strong></div>
     <div class="stat-card"><span class="muted">Active chats</span><strong>{{ active_chats|length }}</strong></div>
-    <div class="stat-card"><span class="muted">Confirmed</span><strong>{{ confirmed_total }}</strong></div>
-    <div class="stat-card"><span class="muted">Completed</span><strong>{{ completed_total }}</strong></div>
+    <div class="stat-card"><span class="muted">Confirmed</span><strong>{{ booking_summary.confirmed|default:0 }}</strong></div>
     <div class="stat-card"><span class="muted">Earnings</span><strong>&#8377;{{ earnings }}</strong></div>
+</section>
+
+<section class="grid grid-3 ops-strip" style="margin-bottom:24px;">
+    <div class="metric-card">
+        <span>Pending client payments</span>
+        <strong>{{ booking_summary.pending|default:0 }}</strong>
+        <small class="muted">These consultations unlock after payment success.</small>
+    </div>
+    <div class="metric-card">
+        <span>Awaiting payment review</span>
+        <strong>{{ payment_summary.awaiting|default:0 }}</strong>
+        <small class="muted">Admin review may be needed before chat opens.</small>
+    </div>
+    <div class="metric-card">
+        <span>Completed consultations</span>
+        <strong>{{ booking_summary.completed|default:0 }}</strong>
+        <small class="muted">Clients can submit reviews after completion.</small>
+    </div>
 </section>
 
 <section class="hero-actions" style="margin-bottom:24px;">
@@ -30,7 +47,7 @@
 
 <section class="grid grid-2">
     <div class="panel">
-        <div class="section-head"><h3>Incoming Booking Requests</h3></div>
+        <div class="section-head"><h3>Consultation Worklist</h3><a class="file-link" href="{% url 'lawyer_bookings' %}">View all</a></div>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Client</th><th>Schedule</th><th>Issue</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead>
@@ -60,7 +77,7 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="muted">No booking requests yet.</td></tr>
+                    <tr><td colspan="6"><div class="empty-card">No booking requests yet. Keep availability current so clients can book.</div></td></tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -73,9 +90,9 @@
                 <a class="chat-list-item" href="{% url 'chat_page' chat.id %}">
                     <div class="inline-meta">
                         <strong>{{ chat.client.username }}</strong>
-                        <span class="muted">{{ chat.updated_at|date:"d M, h:i A" }}</span>
+                        <span class="muted">{{ chat.updated_at|date:"d M, h:i A" }}{% if chat.unread_count %} &middot; {{ chat.unread_count }} unread{% endif %}</span>
                     </div>
-                    <p class="muted">Booking #{{ chat.booking.id }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
+                    <p class="muted">Booking #{{ chat.booking.id }} &middot; {{ chat.booking.get_status_display }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
                 </a>
             {% empty %}
                 <div class="empty-card">No active chats yet.</div>

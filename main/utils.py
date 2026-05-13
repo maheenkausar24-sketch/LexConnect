@@ -1,9 +1,11 @@
 from datetime import timedelta
+import logging
 from pathlib import Path
 
 from asgiref.sync import async_to_sync
 from django.conf import settings
 from channels.layers import get_channel_layer
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
@@ -11,6 +13,7 @@ from .models import Lawyer, Notification, UserProfile
 
 
 ONLINE_WINDOW = timedelta(minutes=5)
+logger = logging.getLogger("main.realtime")
 
 
 def ensure_profile(user, *, is_lawyer=None):
@@ -40,6 +43,14 @@ def mark_user_online(user):
     profile.is_online = True
     profile.last_seen = timezone.now()
     profile.save(update_fields=["is_online", "last_seen"])
+    Lawyer.objects.filter(user=user).update(is_online=True)
+
+
+def touch_user_presence(user):
+    if not getattr(user, "is_authenticated", False):
+        return
+    now = timezone.now()
+    UserProfile.objects.filter(user=user).update(is_online=True, last_seen=now)
     Lawyer.objects.filter(user=user).update(is_online=True)
 
 
@@ -73,13 +84,46 @@ def create_notification_record(user, title, message, url="", *, notification_typ
     )
 
 
+def _queue_notification_task(user_id, title, message, url, notification_type, priority):
+    from .tasks import create_notification_task
+
+    try:
+        return create_notification_task.delay(user_id, title, message, url, notification_type, priority)
+    except Exception:
+        logger.exception(
+            {
+                "event": "notification_queue_failed_falling_back",
+                "user_id": user_id,
+                "notification_type": notification_type,
+            }
+        )
+        return None
+
+
 def create_notification(user, title, message, url="", *, notification_type=Notification.NotificationType.GENERAL, priority=Notification.Priority.NORMAL):
     if not user:
         return None
     if getattr(settings, "LEXCONNECT_ASYNC_NOTIFICATIONS", False):
-        from .tasks import create_notification_task
-
-        return create_notification_task.delay(user.id, title, message, url, notification_type, priority)
+        if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+            queued = _queue_notification_task(user.id, title, message, url, notification_type, priority)
+            if queued is not None:
+                return queued
+        if transaction.get_connection().in_atomic_block:
+            transaction.on_commit(
+                lambda: _queue_notification_task(user.id, title, message, url, notification_type, priority)
+                or create_notification_record(
+                    user,
+                    title,
+                    message,
+                    url,
+                    notification_type=notification_type,
+                    priority=priority,
+                )
+            )
+            return None
+        queued = _queue_notification_task(user.id, title, message, url, notification_type, priority)
+        if queued is not None:
+            return queued
     return create_notification_record(
         user,
         title,
