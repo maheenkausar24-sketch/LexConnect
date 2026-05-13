@@ -20,6 +20,7 @@ class Command(BaseCommand):
             "main.tasks.retry_failed_provider_events",
             "main.tasks.cleanup_stale_operational_records_task",
             "main.tasks.reconcile_payment_ledgers",
+            "main.tasks.send_booking_reminders_task",
         }
         missing = required_tasks.difference(task_names)
         if missing:

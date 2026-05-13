@@ -74,7 +74,7 @@ def mark_stale_users_offline():
 def create_notification_record(user, title, message, url="", *, notification_type=Notification.NotificationType.GENERAL, priority=Notification.Priority.NORMAL):
     if not user:
         return None
-    return Notification.objects.create(
+    notification = Notification.objects.create(
         user=user,
         title=title,
         message=message,
@@ -82,6 +82,13 @@ def create_notification_record(user, title, message, url="", *, notification_typ
         notification_type=notification_type,
         priority=priority,
     )
+    try:
+        from .services.emails import send_notification_email
+
+        send_notification_email(notification)
+    except Exception:
+        logger.exception({"event": "notification_email_dispatch_failed", "notification_id": notification.id})
+    return notification
 
 
 def _queue_notification_task(user_id, title, message, url, notification_type, priority):

@@ -39,12 +39,24 @@
                         <a class="nav-link" href="{% url 'client_bookings' %}">Bookings</a>
                         <a class="nav-link" href="{% url 'client_chats' %}">Chats</a>
                     {% endif %}
-                    <a class="nav-link" href="{% url 'notifications' %}">
-                        Notifications
-                        {% if unread_notifications_count %}
-                            <span class="badge">{{ unread_notifications_count }}</span>
+                    <div class="nav-notification-wrap">
+                        <a class="nav-link nav-notification-link" href="{% url 'notifications' %}">
+                            <span>Notifications</span>
+                            {% if unread_notifications_count %}
+                                <span class="badge badge-pulse">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </a>
+                        {% if recent_notifications %}
+                            <div class="nav-notification-menu">
+                                {% for notification in recent_notifications %}
+                                    <a class="nav-notification-item {% if not notification.is_read %}unread{% endif %}" href="{% url 'notifications' %}">
+                                        <strong>{{ notification.title }}</strong>
+                                        <span>{{ notification.message|truncatechars:64 }}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
                         {% endif %}
-                    </a>
+                    </div>
                     <a class="nav-link" href="{% url 'chatbot' %}">Lexora</a>
                     <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                 {% else %}
@@ -61,7 +73,7 @@
         {% if messages %}
             <div class="message-stack">
                 {% for message in messages %}
-                    <div class="flash-message {% if message.tags == 'error' %}error-message{% endif %}">{{ message }}</div>
+                    <div class="flash-message {% if message.tags %}{{ message.tags }}-message{% endif %}">{{ message }}</div>
                 {% endfor %}
             </div>
         {% endif %}

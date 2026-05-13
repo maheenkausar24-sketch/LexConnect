@@ -1,39 +1,51 @@
 {% extends 'base.html' %}
 {% block title %}Notifications{% endblock %}
 {% block content %}
-<div class="section-head">
+<div class="section-head notification-page-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">Notifications</h1>
-        <p class="section-copy">Track new messages, booking updates, and payment events.</p>
+        <p class="section-copy">Track booking, payment, reminder, and chat updates in one place.</p>
     </div>
-    <form method="post">
-        {% csrf_token %}
-        <button class="btn btn-secondary" type="submit">Mark all as read</button>
-    </form>
+    <div class="notification-summary-strip">
+        <span><strong>{{ unread_total }}</strong> unread</span>
+        <span><strong>{{ read_total }}</strong> read</span>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-secondary" type="submit" {% if not unread_total %}disabled{% endif %}>Mark all as read</button>
+        </form>
+    </div>
 </div>
 
-<div class="notification-list">
-    {% for notification in notifications %}
-        <div class="notification-item">
-            <div class="section-head">
-                <strong>{{ notification.title }}</strong>
-                <span class="muted">{{ notification.created_at|date:"d M h:i A" }}</span>
-            </div>
-            <p class="muted">{{ notification.message }}</p>
-            <div class="hero-actions">
-                {% if notification.url %}
-                    <form method="post" action="{% url 'mark_notification_read' notification.id %}">
-                        {% csrf_token %}
-                        <button class="btn btn-primary" type="submit">Open</button>
-                    </form>
-                {% endif %}
-                {% if not notification.is_read %}
-                    <span class="chip">Unread</span>
-                {% endif %}
-            </div>
+{% if unread_notifications %}
+    <section class="notification-group">
+        <div class="section-head">
+            <h2>Unread</h2>
+            <span class="chip">{{ unread_total }} new</span>
         </div>
-    {% empty %}
-        <div class="empty-card">No notifications yet.</div>
-    {% endfor %}
-</div>
+        <div class="notification-list notification-list-polished">
+            {% for notification in unread_notifications %}
+                {% include 'includes/notification_card.html' with notification=notification %}
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
+
+<section class="notification-group">
+    <div class="section-head">
+        <h2>Recent Activity</h2>
+        {% if read_total %}<span class="chip">{{ read_total }} archived</span>{% endif %}
+    </div>
+    <div class="notification-list notification-list-polished">
+        {% for notification in read_notifications %}
+            {% include 'includes/notification_card.html' with notification=notification %}
+        {% empty %}
+            {% if not unread_total %}
+                <div class="empty-card notification-empty">
+                    <strong>No notifications yet</strong>
+                    <span>Booking updates, payment confirmations, reminders, and chat alerts will appear here.</span>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

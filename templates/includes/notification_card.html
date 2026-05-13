@@ -1,0 +1,30 @@
+<article class="notification-card {% if not notification.is_read %}unread{% endif %}">
+    <div class="notification-icon status-{{ notification.notification_type }}">
+        {% if notification.notification_type == 'booking' %}B{% elif notification.notification_type == 'payment' %}P{% elif notification.notification_type == 'chat' %}C{% else %}N{% endif %}
+    </div>
+    <div class="notification-card-body">
+        <div class="notification-card-top">
+            <div>
+                <strong>{{ notification.title }}</strong>
+                <div class="notification-card-meta">
+                    <span>{{ notification.get_notification_type_display }}</span>
+                    <span>{{ notification.created_at|timesince }} ago</span>
+                    {% if notification.priority != 'normal' %}<span>{{ notification.get_priority_display }}</span>{% endif %}
+                </div>
+            </div>
+            {% if not notification.is_read %}
+                <span class="chip">Unread</span>
+            {% endif %}
+        </div>
+        <p>{{ notification.message }}</p>
+        <div class="notification-card-actions">
+            {% if notification.url %}
+                <form method="post" action="{% url 'mark_notification_read' notification.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="submit">Open</button>
+                </form>
+            {% endif %}
+            <span class="muted">{{ notification.created_at|date:"d M Y, h:i A" }}</span>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,10 @@
+Hello {{ recipient.get_full_name|default:recipient.username }},
+
+{{ notification.title }}
+
+{{ notification.message }}
+
+Open in LexConnect:
+{{ action_url }}
+
+This message was sent by LexConnect because your account has an important {{ notification.get_notification_type_display|lower }} update.

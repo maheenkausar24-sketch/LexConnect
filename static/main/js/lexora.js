@@ -49,6 +49,40 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        function contextualActions(data) {
+            const category = data && data.category ? data.category.name : "";
+            const actions = [
+                { label: "Booking steps", prompt: "How do I book a consultation on LexConnect?" },
+                { label: "Documents", prompt: "What documents should I prepare before meeting a lawyer?" },
+            ];
+            if (category && category !== "General Legal Guidance") {
+                actions.unshift({
+                    label: "More " + category,
+                    prompt: "Find more lawyers for " + category + " and explain what I should compare.",
+                });
+            }
+            if (data && data.summary && data.summary.urgency) {
+                actions.push({ label: "Urgency", prompt: "Is this issue urgent and what should I do first?" });
+            }
+            return actions.slice(0, 4);
+        }
+
+        function renderActionChips(actions) {
+            if (!actions || !actions.length) {
+                return;
+            }
+            const row = document.createElement("div");
+            row.className = "lexora-context-actions";
+            actions.forEach((action) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = action.label;
+                button.addEventListener("click", () => submitQuestion(action.prompt));
+                row.appendChild(button);
+            });
+            chatBox.appendChild(row);
+        }
+
         function renderMessage(message) {
             const bubble = document.createElement("div");
             bubble.className = "lexora-message " + (message.role === "user" ? "lexora-message-user" : "lexora-message-bot");
@@ -58,7 +92,7 @@
             if (message.category) {
                 const meta = document.createElement("div");
                 meta.className = "lexora-meta";
-                meta.textContent = "Category: " + message.category.name + " · " + message.category.confidence + " confidence";
+                meta.textContent = "Category: " + message.category.name + " - " + message.category.confidence + " confidence";
                 chatBox.appendChild(meta);
             }
 
@@ -73,7 +107,7 @@
                     title.textContent = lawyer.name;
 
                     const copy = document.createElement("span");
-                    copy.textContent = `${lawyer.specialization} · ${lawyer.experience} yrs · ${lawyer.location || "Location available on profile"}`;
+                    copy.textContent = `${lawyer.specialization} - ${lawyer.experience} yrs - ${lawyer.location || "Location available on profile"}`;
 
                     const actions = document.createElement("div");
                     actions.className = "lexora-lawyer-actions";
@@ -93,6 +127,7 @@
                 chatBox.appendChild(list);
             }
 
+            renderActionChips(message.actions);
             scrollToBottom();
         }
 
@@ -114,10 +149,19 @@
         function typingNode() {
             const node = document.createElement("div");
             node.className = "lexora-message lexora-message-bot lexora-typing";
+            node.setAttribute("aria-label", "Lexora is analyzing");
             node.innerHTML = "<span></span><span></span><span></span>";
             chatBox.appendChild(node);
             scrollToBottom();
             return node;
+        }
+
+        function retryMessage(question) {
+            return {
+                role: "bot",
+                text: "Lexora could not complete that request. You can retry, or continue with local guidance by describing the issue in a shorter sentence.",
+                actions: [{ label: "Retry", prompt: question }],
+            };
         }
 
         function setBusy(value) {
@@ -170,7 +214,11 @@
                 loader.remove();
 
                 if (!response.ok) {
-                    addMessage({ role: "bot", text: data.error || "Lexora could not process that yet. Please try again." });
+                    addMessage({
+                        role: "bot",
+                        text: data.error || "Lexora could not process that yet. Please try again.",
+                        actions: [{ label: "Retry", prompt: question }],
+                    });
                     return;
                 }
 
@@ -179,6 +227,7 @@
                     text: data.answer || "Lexora prepared safe guidance for your issue.",
                     category: data.category,
                     lawyers: data.lawyers || [],
+                    actions: contextualActions(data),
                 };
                 addMessage(botMessage);
 
@@ -191,10 +240,7 @@
                 }
             } catch (error) {
                 loader.remove();
-                addMessage({
-                    role: "bot",
-                    text: "Lexora is having trouble connecting, but you can still collect your documents, write a timeline, and book a suitable lawyer from LexConnect.",
-                });
+                addMessage(retryMessage(question));
                 setStatus("Connection fallback shown");
             } finally {
                 setBusy(false);
@@ -251,6 +297,7 @@
 
         if (voiceButton && SpeechRecognition) {
             voiceButton.hidden = false;
+            voiceButton.title = "Use voice input";
             voiceButton.addEventListener("click", () => {
                 const recognition = new SpeechRecognition();
                 recognition.lang = "en-IN";
@@ -270,6 +317,11 @@
                 };
                 recognition.start();
             });
+        } else if (voiceButton) {
+            voiceButton.hidden = false;
+            voiceButton.disabled = true;
+            voiceButton.title = "Voice input is not supported in this browser";
+            voiceButton.textContent = "No mic";
         }
 
         renderHistory();

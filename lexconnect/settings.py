@@ -142,6 +142,13 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
 
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = env_int("DJANGO_EMAIL_PORT", 587, minimum=1, maximum=65535)
+EMAIL_USE_TLS = env_bool("DJANGO_EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("DJANGO_EMAIL_USE_SSL", False)
+EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD", "").strip()
+EMAIL_TIMEOUT = env_int("DJANGO_EMAIL_TIMEOUT", 10, minimum=1, maximum=60)
 DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL", "LexConnect <noreply@lexconnect.local>")
 PASSWORD_RESET_TIMEOUT = env_int("DJANGO_PASSWORD_RESET_TIMEOUT", 3600, minimum=300)
 DEMO_PAYMENT_WEBHOOK_SECRET = os.getenv("DEMO_PAYMENT_WEBHOOK_SECRET", SECRET_KEY)
@@ -162,6 +169,7 @@ LEXCONNECT_ASYNC_WEBHOOKS = env_bool("LEXCONNECT_ASYNC_WEBHOOKS", False)
 PRESENCE_STALE_SCAN_INTERVAL = env_int("PRESENCE_STALE_SCAN_INTERVAL", 60)
 LEXCONNECT_TRUST_PROXY_HEADERS = env_bool("LEXCONNECT_TRUST_PROXY_HEADERS", False)
 LEXCONNECT_SHOW_DEMO_ACCOUNTS = env_bool("LEXCONNECT_SHOW_DEMO_ACCOUNTS", DEBUG)
+LEXCONNECT_SITE_URL = os.getenv("LEXCONNECT_SITE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 if REDIS_URL and env_bool("DJANGO_USE_REDIS_CACHE", True):
     CACHES = {
@@ -229,6 +237,11 @@ RATELIMIT_ENABLED = env_bool("DJANGO_RATELIMIT_ENABLED", True)
 RATELIMIT_BYPASS_AUTHENTICATED_ADMINS = env_bool("DJANGO_RATELIMIT_BYPASS_ADMINS", False)
 LEXCONNECT_OPERATIONAL_EVENT_RETENTION_DAYS = env_int("LEXCONNECT_OPERATIONAL_EVENT_RETENTION_DAYS", 90, minimum=7)
 LEXCONNECT_READ_NOTIFICATION_RETENTION_DAYS = env_int("LEXCONNECT_READ_NOTIFICATION_RETENTION_DAYS", 180, minimum=7)
+LEXCONNECT_EMAIL_NOTIFICATIONS = env_bool("LEXCONNECT_EMAIL_NOTIFICATIONS", True)
+LEXCONNECT_EMAIL_NOTIFICATION_TYPES = env_list("LEXCONNECT_EMAIL_NOTIFICATION_TYPES", "booking,payment,chat")
+LEXCONNECT_REMINDERS_ENABLED = env_bool("LEXCONNECT_REMINDERS_ENABLED", True)
+LEXCONNECT_REMINDER_LOOKAHEAD_HOURS = env_int("LEXCONNECT_REMINDER_LOOKAHEAD_HOURS", 24, minimum=1, maximum=168)
+LEXCONNECT_REMINDER_SCAN_LIMIT = env_int("LEXCONNECT_REMINDER_SCAN_LIMIT", 100, minimum=1, maximum=1000)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 LEXORA_GEMINI_MODEL = os.getenv("LEXORA_GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
 LEXORA_GEMINI_TIMEOUT_MS = env_int("LEXORA_GEMINI_TIMEOUT_MS", 5000, minimum=1000, maximum=20000)
@@ -272,6 +285,7 @@ LOGGING = {
         "main.security": {"handlers": ["console"], "level": os.getenv("DJANGO_SECURITY_LOG_LEVEL", "INFO"), "propagate": False},
         "main.audit": {"handlers": ["console"], "level": os.getenv("DJANGO_AUDIT_LOG_LEVEL", "INFO"), "propagate": False},
         "main.requests": {"handlers": ["console"], "level": os.getenv("DJANGO_REQUEST_LOG_LEVEL", "INFO"), "propagate": False},
+        "main.email": {"handlers": ["console"], "level": os.getenv("DJANGO_EMAIL_LOG_LEVEL", "INFO"), "propagate": False},
         "main.payments": {"handlers": ["console"], "level": os.getenv("DJANGO_PAYMENT_LOG_LEVEL", "INFO"), "propagate": False},
         "main.webhooks": {"handlers": ["console"], "level": os.getenv("DJANGO_WEBHOOK_LOG_LEVEL", "INFO"), "propagate": False},
         "main.tasks": {"handlers": ["console"], "level": os.getenv("DJANGO_TASK_LOG_LEVEL", "INFO"), "propagate": False},

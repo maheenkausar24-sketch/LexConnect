@@ -156,6 +156,14 @@ PLATFORM_INTENTS = {
         "keywords": ["dashboard", "notification", "profile", "login"],
         "answer": "Use the dashboard links to track bookings, chats, notifications, payments, and profile activity based on whether you are a client, lawyer, or admin.",
     },
+    "documents": {
+        "keywords": ["document", "documents", "prepare", "papers", "evidence"],
+        "answer": "Before meeting a lawyer, prepare identity proof, notices or messages, payment records, agreements, screenshots, and a short date-wise timeline of what happened.",
+    },
+    "urgency": {
+        "keywords": ["urgent", "urgency", "first", "immediate", "emergency"],
+        "answer": "If there is danger, police action, court deadline, eviction, arrest, or money loss, treat it as urgent. Preserve evidence, avoid deleting messages, and book the most relevant lawyer quickly.",
+    },
 }
 
 

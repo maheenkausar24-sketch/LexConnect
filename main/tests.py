@@ -25,12 +25,13 @@ from .services import bookings as booking_services
 from .services import payments as payment_services
 from .services.bookings import cancel_booking, reschedule_booking, transition_booking_status, upcoming_available_slots, validate_booking_slot
 from .services.payment_providers import sign_demo_payload
+from .services.reminders import scan_upcoming_booking_reminders
 from .tokens import email_verification_token
 from .utils import create_notification
 from .validators import validate_chat_file
 
 
-@override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
+@override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"], LEXCONNECT_EMAIL_NOTIFICATIONS=False)
 class LexConnectFlowTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -1128,6 +1129,68 @@ class LexConnectFlowTests(TestCase):
 
         self.assertIsNotNone(result)
         self.assertTrue(Notification.objects.filter(user=user, title="Async notice").exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", LEXCONNECT_EMAIL_NOTIFICATIONS=True, LEXCONNECT_ASYNC_EMAIL=False)
+    def test_booking_notification_sends_demo_safe_email(self):
+        client_user = self.create_client(username="email_client", email="email_client@example.com")
+        lawyer_user, lawyer = self.create_lawyer(username="email_lawyer", email="email_lawyer@example.com")
+
+        booking_services.create_booking_with_payment(
+            client_user,
+            lawyer,
+            {
+                "issue": "Need help with a custody matter and documents.",
+                "appointment_date": timezone.localdate() + timedelta(days=1),
+                "appointment_time": time(10, 0),
+            },
+        )
+
+        recipients = {recipient for message in mail.outbox for recipient in message.to}
+        self.assertIn(client_user.email, recipients)
+        self.assertIn(lawyer_user.email, recipients)
+        self.assertTrue(Notification.objects.filter(user=lawyer_user, notification_type=Notification.NotificationType.BOOKING).exists())
+
+    @override_settings(LEXCONNECT_EMAIL_NOTIFICATIONS=True, LEXCONNECT_ASYNC_EMAIL=False)
+    def test_notification_email_failure_does_not_block_notification(self):
+        user = self.create_client(username="email_fail_client", email="emailfail@example.com")
+
+        with patch("main.services.emails.send_mail", side_effect=RuntimeError("smtp down")):
+            notification = create_notification(
+                user,
+                "Payment update",
+                "Payment for booking #1 is marked as failed.",
+                "/notifications/",
+                notification_type=Notification.NotificationType.PAYMENT,
+            )
+
+        self.assertIsNotNone(notification)
+        self.assertTrue(Notification.objects.filter(id=notification.id).exists())
+        self.assertTrue(OperationalEvent.objects.filter(event="email_send_failed").exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", LEXCONNECT_EMAIL_NOTIFICATIONS=True, LEXCONNECT_ASYNC_EMAIL=False)
+    def test_booking_reminder_scan_sends_once_per_window(self):
+        client_user = self.create_client(username="reminder_client", email="reminder_client@example.com")
+        lawyer_user, lawyer = self.create_lawyer(username="reminder_lawyer", email="reminder_lawyer@example.com")
+        now = timezone.now()
+        local_start = timezone.localtime(now + timedelta(hours=1)).replace(second=0, microsecond=0)
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a scheduled consultation reminder.",
+            appointment_date=local_start.date(),
+            appointment_time=local_start.time(),
+            status=Booking.Status.CONFIRMED,
+            price_snapshot=lawyer.fee,
+        )
+        Payment.objects.create(booking=booking, amount=lawyer.fee, payment_status=Payment.PaymentStatus.SUCCESS)
+
+        first = scan_upcoming_booking_reminders(now=now)
+        second = scan_upcoming_booking_reminders(now=now)
+
+        self.assertEqual(first["sent"], 2)
+        self.assertEqual(second["sent"], 0)
+        self.assertEqual(Notification.objects.filter(title="Upcoming consultation reminder").count(), 2)
+        self.assertEqual(len(mail.outbox), 2)
 
     def test_health_ready_reports_core_checks(self):
         response = self.client.get(reverse("health_ready"))

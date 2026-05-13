@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..audit import audit_event, record_operational_event
-from ..models import Booking, BookingStatusHistory, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory
+from ..models import Booking, BookingStatusHistory, Notification, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory
 from .bookings import transition_booking_status
 from .payment_providers import get_payment_provider, payload_hash, verify_provider_event as provider_event_verified
 from ..utils import create_notification
@@ -470,6 +470,8 @@ def request_demo_payment_verification(payment, *, actor):
         "Payment awaiting verification",
         f"{booking.client.username} requested demo payment verification for booking #{booking.id}.",
         reverse("lawyer_dashboard"),
+        notification_type=Notification.NotificationType.PAYMENT,
+        priority=Notification.Priority.HIGH,
     )
     for admin_user in booking.client.__class__.objects.filter(is_staff=True, is_active=True):
         create_notification(
@@ -477,6 +479,8 @@ def request_demo_payment_verification(payment, *, actor):
             "Payment review needed",
             f"Booking #{booking.id} is awaiting demo payment verification.",
             reverse("admin_payments"),
+            notification_type=Notification.NotificationType.PAYMENT,
+            priority=Notification.Priority.HIGH,
         )
     return payment
 
@@ -612,6 +616,7 @@ def process_refund(refund_request, *, actor=None, provider_event_id=""):
             "Payment refunded",
             f"Refund for booking #{payment.booking.id} has been processed.",
             reverse("client_bookings"),
+            notification_type=Notification.NotificationType.PAYMENT,
         )
         return refund_request, True
 
@@ -696,12 +701,16 @@ def mark_payment_success(payment, *, actor=None):
         "Payment confirmed",
         f"Booking #{payment.booking.id} is now confirmed.",
         reverse("lawyer_dashboard"),
+        notification_type=Notification.NotificationType.PAYMENT,
+        priority=Notification.Priority.HIGH,
     )
     create_notification(
         payment.booking.client,
         "Payment recorded",
         f"Your payment for booking #{payment.booking.id} has been recorded.",
         reverse("client_dashboard"),
+        notification_type=Notification.NotificationType.PAYMENT,
+        priority=Notification.Priority.HIGH,
     )
     return payment
 
@@ -716,6 +725,8 @@ def mark_payment_failed(payment):
         "Payment update",
         f"Payment for booking #{payment.booking.id} is marked as failed.",
         reverse("payment_page", args=[payment.booking.id]),
+        notification_type=Notification.NotificationType.PAYMENT,
+        priority=Notification.Priority.HIGH,
     )
     return payment
 

@@ -13,7 +13,19 @@ def notifications_view(request):
     if request.method == "POST":
         notifications.filter(is_read=False).update(is_read=True, read_at=timezone.now())
         return redirect("notifications")
-    return render(request, "notifications.html", {"notifications": notifications})
+    unread_notifications = notifications.filter(is_read=False)
+    read_notifications = notifications.filter(is_read=True)
+    return render(
+        request,
+        "notifications.html",
+        {
+            "notifications": notifications,
+            "unread_notifications": unread_notifications,
+            "read_notifications": read_notifications,
+            "unread_total": unread_notifications.count(),
+            "read_total": read_notifications.count(),
+        },
+    )
 
 
 @login_required

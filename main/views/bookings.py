@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from ..decorators import client_required, lawyer_required
 from ..forms import BookingCancelForm, BookingForm, BookingRescheduleForm, BookingStatusForm, LawyerAvailabilityForm, PaymentStatusForm, ReviewForm
-from ..models import Booking, Lawyer, Payment, Review
+from ..models import Booking, Lawyer, Notification, Payment, Review
 from ..rate_limit import rate_limit
 from ..services.auth import is_lawyer_user
 from ..services.bookings import cancel_booking, create_booking_with_payment, eligible_review_bookings, get_client_bookings_queryset, reschedule_booking, time_ranges_overlap, transition_booking_status, upcoming_available_slots, upcoming_slot_statuses
@@ -114,6 +114,7 @@ def update_booking_status(request, booking_id, status):
                 "Booking completed",
                 f"Consultation #{booking.id} has been marked as completed.",
                 "/client/bookings/",
+                notification_type=Notification.NotificationType.BOOKING,
             )
         elif next_status == Booking.Status.CANCELLED:
             cancel_booking(booking, actor=request.user)
@@ -195,6 +196,7 @@ def add_review(request, lawyer_id):
             "New review received",
             f"{request.user.username} left a review for booking #{booking.id}.",
             f"/lawyer/profile/{lawyer.id}/",
+            notification_type=Notification.NotificationType.BOOKING,
         )
         messages.success(request, "Review submitted successfully.")
     else:

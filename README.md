@@ -27,6 +27,20 @@ LexConnect is a Django-based lawyer consultation platform for browsing lawyers, 
 - `DJANGO_SECRET_KEY`
 - `DJANGO_DEBUG`
 - `DJANGO_ALLOWED_HOSTS`
+- `LEXCONNECT_SITE_URL`
+
+### Email and reminders
+
+- `DJANGO_EMAIL_BACKEND`
+- `DJANGO_EMAIL_HOST`
+- `DJANGO_EMAIL_PORT`
+- `DJANGO_EMAIL_USE_TLS`
+- `DJANGO_EMAIL_HOST_USER`
+- `DJANGO_EMAIL_HOST_PASSWORD`
+- `LEXCONNECT_EMAIL_NOTIFICATIONS`
+- `LEXCONNECT_REMINDERS_ENABLED`
+
+For Gmail SMTP, use Django's SMTP backend with `smtp.gmail.com`, port `587`, TLS enabled, and a Gmail app password in `DJANGO_EMAIL_HOST_PASSWORD`. Local demos can keep the console email backend.
 
 ### Optional PostgreSQL
 

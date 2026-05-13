@@ -151,3 +151,11 @@ class RateLimitedPasswordResetView(PasswordResetView):
             return render(request, self.template_name, {"form": self.get_form(), "error": str(exc)}, status=429)
         audit_event("password_reset_requested", request=request)
         return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except Exception as exc:
+            security_event("password_reset_email_failed", request=self.request, error=exc.__class__.__name__)
+            messages.info(self.request, "Password reset request received. Email delivery is temporarily unavailable in this demo environment.")
+            return redirect(self.success_url)

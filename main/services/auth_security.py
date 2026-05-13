@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_str
@@ -8,6 +6,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
 from ..audit import audit_event, security_event
+from ..services.emails import send_verification_template_email
 from ..tokens import email_verification_token
 from ..utils import ensure_profile_role
 
@@ -26,22 +25,13 @@ def send_verification_email(request, user):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = email_verification_token.make_token(user)
     verify_url = build_absolute_url(request, "verify_email", uid, token)
-    subject = "Verify your LexConnect email"
-    message = (
-        "Welcome to LexConnect.\n\n"
-        "Please verify your email address using this secure link:\n"
-        f"{verify_url}\n\n"
-        "If you did not create this account, you can ignore this email."
-    )
     try:
-        if getattr(settings, "LEXCONNECT_ASYNC_EMAIL", False):
-            from ..tasks import send_email_task
-
-            send_email_task.delay(subject, message, [user.email], settings.DEFAULT_FROM_EMAIL)
-        else:
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+        sent = send_verification_template_email(request, user, verify_url)
     except Exception as exc:
         security_event("email_verification_send_failed", request=request, actor=user, error=exc.__class__.__name__)
+        return False
+    if not sent:
+        security_event("email_verification_send_failed", request=request, actor=user, error="EmailDispatchFailed")
         return False
     audit_event("email_verification_sent", request=request, actor=user)
     return True

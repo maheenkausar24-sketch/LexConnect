@@ -12,6 +12,7 @@ from .audit import record_operational_event
 from .models import Notification, Payment, ProviderEvent
 from .services.operations import cleanup_stale_operational_records
 from .services.payments import process_provider_webhook, reconcile_payment_ledger
+from .services.reminders import scan_upcoming_booking_reminders
 from .utils import create_notification_record, mark_stale_users_offline
 
 
@@ -28,14 +29,33 @@ class LoggedRetryTask(Task):
 
 
 @shared_task(bind=True, base=LoggedRetryTask)
-def send_email_task(self, subject, message, recipient_list, from_email=None):
-    sent = send_mail(
-        subject,
-        message,
-        from_email or settings.DEFAULT_FROM_EMAIL,
-        recipient_list,
-        fail_silently=False,
-    )
+def send_email_task(self, subject, message, recipient_list, from_email=None, html_message=""):
+    try:
+        sent = send_mail(
+            subject,
+            message,
+            from_email or settings.DEFAULT_FROM_EMAIL,
+            recipient_list,
+            fail_silently=False,
+            html_message=html_message or None,
+        )
+    except Exception as exc:
+        task_logger.warning(
+            {
+                "event": "email_send_failed",
+                "task_id": self.request.id,
+                "error": exc.__class__.__name__,
+                "recipient_count": len(recipient_list),
+            }
+        )
+        record_operational_event(
+            "task",
+            "email_send_failed",
+            level="warning",
+            summary=f"Email task failed: {exc.__class__.__name__}",
+            metadata={"task_id": self.request.id, "recipient_count": len(recipient_list)},
+        )
+        return 0
     task_logger.info({"event": "email_sent", "task_id": self.request.id, "recipient_count": len(recipient_list), "sent": sent})
     return sent
 
@@ -162,6 +182,13 @@ def mark_stale_users_offline_task(self):
 def cleanup_stale_operational_records_task(self):
     result = cleanup_stale_operational_records()
     task_logger.info({"event": "stale_operational_records_cleaned", "task_id": self.request.id, **result})
+    return result
+
+
+@shared_task(bind=True, base=LoggedRetryTask)
+def send_booking_reminders_task(self):
+    result = scan_upcoming_booking_reminders()
+    task_logger.info({"event": "booking_reminder_scan_finished", "task_id": self.request.id, **result})
     return result
 
 

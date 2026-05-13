@@ -1,0 +1,8 @@
+Hello {{ recipient.get_full_name|default:recipient.username }},
+
+Welcome to LexConnect.
+
+Please verify your email address using this secure link:
+{{ verify_url }}
+
+If you did not create this account, you can ignore this email.

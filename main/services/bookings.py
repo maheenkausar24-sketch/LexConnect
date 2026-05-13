@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..audit import audit_event
-from ..models import Booking, BookingStatusHistory, Lawyer, LawyerBlockedDate, Payment
+from ..models import Booking, BookingStatusHistory, Lawyer, LawyerBlockedDate, Notification, Payment
 from ..utils import create_notification
 
 
@@ -256,6 +256,15 @@ def create_booking_with_payment(client, lawyer, cleaned_data):
         "New booking request",
         f"{client.username} requested a consultation for {booking.appointment_date} at {booking.appointment_time.strftime('%H:%M')}.",
         reverse("lawyer_dashboard"),
+        notification_type=Notification.NotificationType.BOOKING,
+        priority=Notification.Priority.HIGH,
+    )
+    create_notification(
+        client,
+        "Booking submitted",
+        f"Your consultation request with {lawyer.name} was created for {booking.appointment_date} at {booking.appointment_time.strftime('%H:%M')}.",
+        reverse("client_bookings"),
+        notification_type=Notification.NotificationType.BOOKING,
     )
     audit_event("booking_created", actor=client, booking_id=booking.id, lawyer_id=lawyer.id)
     return booking
@@ -317,6 +326,8 @@ def cancel_booking(booking, *, actor, reason=""):
         "Booking cancelled",
         f"Consultation #{booking.id} was cancelled.",
         reverse("dashboard" if recipient == booking.client else "lawyer_dashboard"),
+        notification_type=Notification.NotificationType.BOOKING,
+        priority=Notification.Priority.HIGH,
     )
     return booking
 
@@ -367,6 +378,8 @@ def reschedule_booking(booking, cleaned_data, *, actor):
         "Booking rescheduled",
         f"Consultation #{booking.id} has been moved to {booking.appointment_date} at {booking.appointment_time.strftime('%H:%M')}.",
         reverse("dashboard" if recipient == booking.client else "lawyer_dashboard"),
+        notification_type=Notification.NotificationType.BOOKING,
+        priority=Notification.Priority.HIGH,
     )
     return booking
 

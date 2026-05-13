@@ -132,6 +132,66 @@ select {
     margin-left: 6px;
 }
 
+.badge-pulse {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.36);
+    animation: badgePulse 1.8s ease-out infinite;
+}
+
+.nav-notification-wrap {
+    position: relative;
+}
+
+.nav-notification-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-notification-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    display: grid;
+    gap: 8px;
+    width: min(340px, calc(100vw - 24px));
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 60;
+}
+
+.nav-notification-wrap:hover .nav-notification-menu,
+.nav-notification-wrap:focus-within .nav-notification-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.nav-notification-item {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 12px;
+    color: var(--text);
+    background: var(--surface-muted);
+}
+
+.nav-notification-item.unread {
+    background: rgba(20, 184, 166, 0.12);
+}
+
+.nav-notification-item span {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
 .page-container {
     padding: 32px 0 48px;
     animation: fadeInUp 0.35s ease both;
@@ -710,15 +770,34 @@ select:focus {
 }
 
 .flash-message {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 12px 14px;
     border-radius: 14px;
     background: rgba(20, 184, 166, 0.12);
     color: var(--primary-dark);
+    border: 1px solid rgba(15, 118, 110, 0.08);
 }
 
-.error-message {
+.error-message,
+.warning-message {
     background: rgba(220, 38, 38, 0.12);
     color: var(--danger);
+    border-color: rgba(220, 38, 38, 0.16);
+}
+
+.success-message {
+    background: rgba(22, 163, 74, 0.12);
+    color: var(--success);
+    border-color: rgba(22, 163, 74, 0.16);
+}
+
+.info-message {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.16);
 }
 
 .empty-card {
@@ -1079,6 +1158,122 @@ select:focus {
     gap: 14px;
 }
 
+.notification-page-head {
+    align-items: flex-start;
+}
+
+.notification-summary-strip {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.notification-summary-strip > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 9px 12px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid rgba(15, 118, 110, 0.12);
+    color: var(--text-muted);
+}
+
+.notification-summary-strip strong {
+    color: var(--text);
+}
+
+.notification-group + .notification-group {
+    margin-top: 26px;
+}
+
+.notification-list-polished {
+    gap: 12px;
+}
+
+.notification-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+    background: var(--surface);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: var(--shadow);
+}
+
+.notification-card.unread {
+    border-color: rgba(20, 184, 166, 0.28);
+    background: linear-gradient(90deg, rgba(20, 184, 166, 0.08), #fff 42%);
+}
+
+.notification-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--primary-dark);
+    font-weight: 800;
+}
+
+.notification-icon.status-payment {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+
+.notification-icon.status-chat {
+    background: rgba(59, 130, 246, 0.13);
+    color: #1d4ed8;
+}
+
+.notification-card-body {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.notification-card-top,
+.notification-card-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.notification-card-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.notification-card p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.notification-empty {
+    display: grid;
+    gap: 6px;
+}
+
+@keyframes badgePulse {
+    70% {
+        box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
 .footer-note {
     margin-top: auto;
     color: var(--text-muted);
@@ -1284,6 +1479,24 @@ select:focus {
     font-weight: 700;
 }
 
+.lexora-context-actions {
+    display: flex;
+    align-self: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 92%;
+}
+
+.lexora-context-actions button {
+    min-height: 32px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    color: #1d4ed8;
+    background: rgba(59, 130, 246, 0.1);
+    font-size: 12px;
+    font-weight: 800;
+}
+
 .lexora-composer {
     display: flex;
     align-items: flex-end;
@@ -1308,6 +1521,11 @@ select:focus {
     color: #fff;
     background: linear-gradient(135deg, var(--primary), #2563eb);
     font-weight: 800;
+}
+
+.lexora-icon-btn[disabled] {
+    opacity: 0.52;
+    cursor: not-allowed;
 }
 
 .lexora-lawyer-list {
@@ -1499,6 +1717,37 @@ select:focus {
 
     .filter-bar {
         grid-template-columns: 1fr;
+    }
+
+    .nav-notification-wrap,
+    .nav-notification-link {
+        width: 100%;
+    }
+
+    .nav-notification-menu {
+        position: static;
+        width: 100%;
+        margin-top: 6px;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+    }
+
+    .notification-card,
+    .notification-card-top,
+    .notification-card-actions,
+    .notification-summary-strip {
+        align-items: flex-start;
+    }
+
+    .notification-card {
+        grid-template-columns: 1fr;
+    }
+
+    .notification-card-top,
+    .notification-card-actions,
+    .notification-summary-strip {
+        flex-direction: column;
     }
 
     .pagination {

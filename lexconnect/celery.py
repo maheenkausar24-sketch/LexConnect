@@ -23,6 +23,10 @@ app.conf.beat_schedule = {
         "task": "main.tasks.mark_stale_users_offline_task",
         "schedule": crontab(minute="*/5"),
     },
+    "lexconnect-send-booking-reminders": {
+        "task": "main.tasks.send_booking_reminders_task",
+        "schedule": crontab(minute="*/15"),
+    },
     "lexconnect-cleanup-stale-operational-records": {
         "task": "main.tasks.cleanup_stale_operational_records_task",
         "schedule": crontab(hour="2", minute="15"),
