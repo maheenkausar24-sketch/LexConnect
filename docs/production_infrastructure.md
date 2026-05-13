@@ -38,6 +38,8 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 python manage.py migrate --check
 python manage.py validate_production
+python manage.py deployment_diagnostics
+python manage.py production_smoke_test
 python manage.py cleanup_operational_records --dry-run
 python manage.py validate_celery
 python manage.py test
@@ -50,4 +52,4 @@ Application logs use JSON formatting via `main.logging.JsonFormatter`. Dedicated
 
 ## Phase 4D Notes
 
-Use `docs/phase4d_production_runbook.md` for the release checklist, rollback procedure, backup/restore guidance, retention cleanup policy, and final manual QA pass.
+Use `docs/phase4d_production_runbook.md` and `docs/production_rehearsal.md` for the release checklist, rollback procedure, backup/restore guidance, retention cleanup policy, Linux VPS deployment notes, Nginx/websocket assumptions, monitoring, troubleshooting, and final manual QA pass.

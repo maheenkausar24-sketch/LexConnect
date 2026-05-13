@@ -2,6 +2,8 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from main.services.operations import runtime_configuration_summary
+
 
 class Command(BaseCommand):
     help = "Run production startup validation for deployment readiness."
@@ -27,10 +29,20 @@ class Command(BaseCommand):
             failures.append("A shared production cache is required for rate limits and health checks.")
         if settings.DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
             failures.append("POSTGRES_* must be configured for production database storage.")
+        if getattr(settings, "LEXCONNECT_SHOW_DEMO_ACCOUNTS", False):
+            failures.append("LEXCONNECT_SHOW_DEMO_ACCOUNTS must be False in production.")
+        if getattr(settings, "DEMO_PAYMENT_WEBHOOK_SECRET", "") == settings.SECRET_KEY:
+            failures.append("DEMO_PAYMENT_WEBHOOK_SECRET must be set separately from DJANGO_SECRET_KEY.")
+        if not settings.SECURE_PROXY_SSL_HEADER:
+            failures.append("SECURE_PROXY_SSL_HEADER must be configured behind the HTTPS reverse proxy.")
+        if settings.STORAGES["staticfiles"]["BACKEND"] != "django.contrib.staticfiles.storage.ManifestStaticFilesStorage":
+            failures.append("Static files should use ManifestStaticFilesStorage in production.")
 
         if failures:
             for failure in failures:
                 self.stderr.write(f"- {failure}")
             raise CommandError("Production validation failed.")
 
+        summary = runtime_configuration_summary()
+        self.stdout.write(f"runtime={summary}")
         self.stdout.write(self.style.SUCCESS("Production validation passed."))

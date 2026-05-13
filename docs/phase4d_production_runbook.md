@@ -7,6 +7,8 @@ Run these before promoting a build:
 ```bash
 python manage.py check --deploy
 python manage.py validate_production
+python manage.py deployment_diagnostics --fail-on-warning
+python manage.py production_smoke_test
 python manage.py makemigrations --check --dry-run
 python manage.py migrate --check
 python manage.py validate_celery
@@ -98,8 +100,12 @@ Avoid logging request bodies, uploaded file contents, passwords, session cookies
 
 - `/health/live/` returns `200`.
 - `/health/ready/` returns `200` and reports database, cache, channels, and celery.
+- `python manage.py deployment_diagnostics --fail-on-warning` passes in the production environment.
+- `python manage.py production_smoke_test` passes after release.
 - Demo accounts are hidden when `LEXCONNECT_SHOW_DEMO_ACCOUNTS=False`.
 - Admin-only pages redirect non-admin users.
 - Payment status changes require the admin confirmation field and CSRF.
 - Chat pages and websocket sends still work for confirmed paid bookings.
 - Uploads reject SVGs, empty files, path-like filenames, and mismatched content.
+
+See `docs/production_rehearsal.md` for Linux VPS, Nginx, Redis, Celery, websocket, monitoring, recovery, and troubleshooting guidance.

@@ -1,4 +1,5 @@
 import json
+from io import StringIO
 from datetime import datetime, time, timedelta
 from unittest.mock import patch
 
@@ -1136,6 +1137,7 @@ class LexConnectFlowTests(TestCase):
         self.assertEqual(payload["status"], "ok")
         self.assertIn("database", {check["name"] for check in payload["checks"]})
         self.assertIn("cache", {check["name"] for check in payload["checks"]})
+        self.assertIn("staticfiles", {check["name"] for check in payload["checks"]})
 
     def test_admin_operational_pages_are_available(self):
         admin_user = self.create_admin(username="ops_admin", email="ops_admin@example.com")
@@ -1172,3 +1174,20 @@ class LexConnectFlowTests(TestCase):
 
         self.assertFalse(OperationalEvent.objects.filter(id=old_event.id).exists())
         self.assertFalse(Notification.objects.filter(id=notification.id).exists())
+
+    def test_deployment_diagnostics_command_reports_runtime(self):
+        out = StringIO()
+
+        call_command("deployment_diagnostics", stdout=out)
+
+        payload = json.loads(out.getvalue())
+        self.assertIn("runtime", payload)
+        self.assertIn("health", payload)
+        self.assertEqual(payload["cache_roundtrip"]["status"], "ok")
+
+    def test_production_smoke_test_command_passes(self):
+        out = StringIO()
+
+        call_command("production_smoke_test", "--skip-deploy-check", stdout=out)
+
+        self.assertIn("Production smoke test passed.", out.getvalue())

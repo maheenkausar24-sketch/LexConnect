@@ -63,12 +63,14 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 python manage.py migrate --check
 python manage.py validate_production
+python manage.py deployment_diagnostics
+python manage.py production_smoke_test
 python manage.py cleanup_operational_records --dry-run
 python manage.py validate_celery
 celery -A lexconnect report
 ```
 
-See `docs/production_infrastructure.md` and `docs/phase4d_production_runbook.md` for production startup, rollback, backup/restore, and retention guidance.
+See `docs/production_infrastructure.md`, `docs/phase4d_production_runbook.md`, and `docs/production_rehearsal.md` for production startup, smoke testing, rollback, backup/restore, Nginx/websocket, and retention guidance.
 
 ## Notes
 

@@ -44,6 +44,18 @@ jobs:
           CELERY_TASK_ALWAYS_EAGER: "True"
         run: python manage.py validate_celery
 
+      - name: Deployment diagnostics
+        env:
+          DJANGO_DEBUG: "True"
+          CELERY_TASK_ALWAYS_EAGER: "True"
+        run: python manage.py deployment_diagnostics
+
+      - name: Production smoke test
+        env:
+          DJANGO_DEBUG: "True"
+          CELERY_TASK_ALWAYS_EAGER: "True"
+        run: python manage.py production_smoke_test --skip-deploy-check
+
       - name: Retention cleanup dry run
         env:
           DJANGO_DEBUG: "True"

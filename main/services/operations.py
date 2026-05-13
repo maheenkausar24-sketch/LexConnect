@@ -1,8 +1,10 @@
 from datetime import timedelta
+from pathlib import Path
 
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.storage import default_storage, storages
 from django.db import connection
 from django.utils import timezone
 
@@ -50,8 +52,54 @@ def check_celery():
     return {"name": "celery", "status": "ok", "detail": broker_url.split("://", 1)[0] or "configured"}
 
 
+def check_staticfiles_storage():
+    try:
+        storage = storages["staticfiles"]
+        return {"name": "staticfiles", "status": "ok", "detail": storage.__class__.__name__}
+    except Exception as exc:
+        return {"name": "staticfiles", "status": "error", "detail": exc.__class__.__name__}
+
+
+def check_media_storage():
+    try:
+        storage_name = default_storage.__class__.__name__
+        media_root = getattr(settings, "MEDIA_ROOT", "")
+        if media_root and not Path(media_root).exists():
+            return {"name": "media", "status": "warning", "detail": f"{storage_name}: media root missing"}
+        return {"name": "media", "status": "ok", "detail": storage_name}
+    except Exception as exc:
+        return {"name": "media", "status": "error", "detail": exc.__class__.__name__}
+
+
+def runtime_configuration_summary():
+    channel_backend = settings.CHANNEL_LAYERS["default"]["BACKEND"]
+    return {
+        "debug": settings.DEBUG,
+        "database_engine": settings.DATABASES["default"]["ENGINE"],
+        "cache_backend": settings.CACHES["default"]["BACKEND"],
+        "channel_layer": channel_backend.rsplit(".", 1)[-1],
+        "celery_broker_scheme": (getattr(settings, "CELERY_BROKER_URL", "") or "").split("://", 1)[0],
+        "celery_eager": getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False),
+        "staticfiles_storage": storages["staticfiles"].__class__.__name__,
+        "media_storage": default_storage.__class__.__name__,
+        "secure_ssl_redirect": settings.SECURE_SSL_REDIRECT,
+        "secure_proxy_ssl_header": bool(settings.SECURE_PROXY_SSL_HEADER),
+        "use_x_forwarded_host": settings.USE_X_FORWARDED_HOST,
+        "trust_proxy_headers": getattr(settings, "LEXCONNECT_TRUST_PROXY_HEADERS", False),
+        "demo_accounts_enabled": getattr(settings, "LEXCONNECT_SHOW_DEMO_ACCOUNTS", False),
+        "csp_report_only": getattr(settings, "LEXCONNECT_CSP_REPORT_ONLY", False),
+    }
+
+
 def health_report():
-    checks = [check_database(), check_cache(), check_channels(), check_celery()]
+    checks = [
+        check_database(),
+        check_cache(),
+        check_channels(),
+        check_celery(),
+        check_staticfiles_storage(),
+        check_media_storage(),
+    ]
     has_error = any(check["status"] == "error" for check in checks)
     return {
         "status": "error" if has_error else "ok",
