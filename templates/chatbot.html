@@ -2,26 +2,39 @@
 {% load static %}
 {% block title %}Lexora AI{% endblock %}
 {% block content %}
-<div class="chat-shell" data-lexora-root data-csrf-token="{{ csrf_token }}">
-    <aside class="chat-sidebar panel">
-        <div class="section-head">
-            <h3>Lexora AI</h3>
+<div class="lexora-page" data-lexora-root data-lexora-mode="page" data-csrf-token="{{ csrf_token }}">
+    <aside class="lexora-page-sidebar">
+        <span class="lexora-eyebrow">AI legal guidance</span>
+        <h1>Lexora AI</h1>
+        <p>Identify issue categories, summarize case details, discover matching lawyers, and move toward booking with clear next steps.</p>
+        <div class="lexora-suggestions lexora-suggestions-page" data-lexora-suggestions>
+            <button type="button" data-lexora-suggestion="Find a lawyer for my legal issue">Find a lawyer</button>
+            <button type="button" data-lexora-suggestion="Summarize my issue and suggest next steps">Summarize my issue</button>
+            <button type="button" data-lexora-suggestion="I have a property dispute over land or house documents">Property dispute</button>
+            <button type="button" data-lexora-suggestion="I need help with a family issue like divorce, custody, or maintenance">Family issue</button>
+            <button type="button" data-lexora-suggestion="I need help with cyber crime, hacking, scam, or online fraud">Cyber crime</button>
+            <button type="button" data-lexora-suggestion="How do I book a consultation on LexConnect?">Book consultation</button>
         </div>
-        <p class="section-copy">Ask legal questions, get category guidance, and discover recommended lawyers.</p>
         <button class="btn btn-secondary" data-lexora-reset type="button">New Chat</button>
     </aside>
-    <section class="chat-room">
-        <div class="chat-messages" data-lexora-box>
-            <div class="chat-bubble other">Hello! Ask Lexora about your legal issue and I will guide you.</div>
-        </div>
-        <div class="chat-form-panel">
-            <div class="chat-composer">
-                <div class="chat-input-wrap">
-                    <input data-lexora-input type="text" placeholder="Describe your legal problem...">
-                </div>
-                <button class="tool-btn send-btn" data-lexora-send type="button">&#10148;</button>
+    <section class="lexora-page-room">
+        <header class="lexora-page-header">
+            <div>
+                <span class="lexora-eyebrow">Lexora is online</span>
+                <h2>Smart Legal Guidance</h2>
+            </div>
+            <div class="lexora-status" data-lexora-status>Ready to analyze</div>
+        </header>
+        <div class="lexora-messages" data-lexora-box>
+            <div class="lexora-message lexora-message-bot">
+                Hi, I am Lexora AI. Tell me what happened, and I will summarize it, identify a probable legal category, and suggest matching lawyers.
             </div>
         </div>
+        <form class="lexora-composer lexora-composer-page" data-lexora-form>
+            <button class="lexora-icon-btn" data-lexora-voice type="button" aria-label="Use voice input" hidden>Mic</button>
+            <textarea data-lexora-input rows="1" placeholder="Describe your legal issue..."></textarea>
+            <button class="lexora-send" data-lexora-send type="submit">Send</button>
+        </form>
     </section>
 </div>
 {% endblock %}

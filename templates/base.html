@@ -77,6 +77,10 @@
         {% block content %}{% endblock %}
     </main>
 </div>
+{% if request.resolver_match.url_name != 'chatbot' %}
+    {% include 'includes/lexora_widget.html' %}
+    <script src="{% static 'main/js/lexora.js' %}"></script>
+{% endif %}
 <script>
 document.addEventListener("submit", function (event) {
     const form = event.target.closest("form[data-confirm]");

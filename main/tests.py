@@ -1139,6 +1139,45 @@ class LexConnectFlowTests(TestCase):
         self.assertIn("cache", {check["name"] for check in payload["checks"]})
         self.assertIn("staticfiles", {check["name"] for check in payload["checks"]})
 
+    @override_settings(GEMINI_API_KEY="")
+    def test_lexora_uses_local_guidance_and_recommends_lawyers_without_api_key(self):
+        _, lawyer = self.create_lawyer(username="lexora_lawyer", email="lexora_lawyer@example.com")
+
+        response = self.client.post(
+            reverse("ask_lexora"),
+            data=json.dumps({"question": "I need help with divorce and child custody documents."}),
+            content_type="application/json",
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["provider_status"], "local")
+        self.assertEqual(payload["category"]["name"], "Family Law")
+        self.assertIn("general legal information", payload["answer"].lower())
+        self.assertEqual(payload["lawyers"][0]["id"], lawyer.id)
+        self.assertIn("consult_url", payload["lawyers"][0])
+
+    @override_settings(GEMINI_API_KEY="demo-key")
+    def test_lexora_gemini_failure_returns_safe_fallback(self):
+        self.create_lawyer(username="fallback_lawyer", email="fallback_lawyer@example.com")
+
+        with patch("main.services.lexora.gemini_enhancement", side_effect=TimeoutError):
+            response = self.client.post(reverse("ask_lexora"), {"question": "My spouse is asking for divorce and custody."})
+
+        payload = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["provider_status"], "fallback")
+        self.assertIn("temporarily unavailable", payload["provider_error"])
+        self.assertEqual(payload["category"]["name"], "Family Law")
+
+    def test_lexora_widget_loads_on_platform_pages(self):
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Lexora AI")
+        self.assertContains(response, "data-lexora-root")
+        self.assertContains(response, "main/js/lexora.js")
+
     def test_admin_operational_pages_are_available(self):
         admin_user = self.create_admin(username="ops_admin", email="ops_admin@example.com")
         audit_event("ops_test_event", actor=admin_user, metadata={"area": "phase4c"})

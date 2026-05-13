@@ -41,6 +41,10 @@ If PostgreSQL variables are not supplied, the project falls back to SQLite for l
 ### Optional Lexora AI
 
 - `GEMINI_API_KEY`
+- `LEXORA_GEMINI_MODEL` defaults to `gemini-2.0-flash`
+- `LEXORA_GEMINI_TIMEOUT_MS` defaults to `5000`
+
+Lexora works without a Gemini key by using local keyword/category matching, safe fallback guidance, and existing lawyer recommendations.
 
 ## Testing
 
