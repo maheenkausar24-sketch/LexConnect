@@ -1,80 +1,13 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-<title>Consultation Submitted</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:linear-gradient(120deg,#4a6cf7,#6a8bff);
-margin:0;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-}
-
-.card{
-background:white;
-padding:50px;
-border-radius:12px;
-box-shadow:0 10px 25px rgba(0,0,0,0.2);
-text-align:center;
-width:420px;
-}
-
-.check{
-font-size:70px;
-color:#4CAF50;
-margin-bottom:20px;
-}
-
-h2{
-color:#333;
-margin-bottom:15px;
-}
-
-p{
-color:#666;
-margin-bottom:25px;
-}
-
-button{
-padding:12px 22px;
-border:none;
-background:#4a6cf7;
-color:white;
-border-radius:6px;
-font-size:16px;
-cursor:pointer;
-}
-
-button:hover{
-background:#324ed1;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="card">
-
-<div class="check">✔</div>
-
-<h2>Consultation Request Submitted!</h2>
-
-<p>Your request has been successfully sent to the lawyer.  
-They will contact you soon.</p>
-
-<a href="/dashboard/">
-<button>Back to Dashboard</button>
-</a>
-
+{% extends 'base.html' %}
+{% block title %}Success{% endblock %}
+{% block content %}
+<div class="form-shell" style="text-align:center;">
+    <div class="brand-badge" style="margin:0 auto 18px;">&#10003;</div>
+    <h1 class="page-title" style="font-size:34px;">Consultation submitted successfully</h1>
+    <p class="section-copy">Your payment is complete and the lawyer can now review your request. You can keep track of updates from your dashboard and notifications panel.</p>
+    <div class="hero-actions" style="justify-content:center;">
+        <a class="btn btn-primary" href="{% url 'dashboard' %}">Go to Dashboard</a>
+        <a class="btn btn-secondary" href="{% url 'user_chats' %}">Open Chats</a>
+    </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

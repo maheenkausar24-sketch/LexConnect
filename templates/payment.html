@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Payment{% endblock %}
+{% block content %}
+<div class="form-shell">
+    <h1 class="page-title" style="font-size:36px;">Secure Demo Payment</h1>
+    <p class="section-copy">This free local flow never trusts a client-side success click. Request verification here; an admin marks the payment successful before chat unlocks.</p>
+    <div class="grid">
+        <div class="card">
+            <strong>Lawyer</strong>
+            <p class="muted">{{ booking.lawyer.name }}</p>
+        </div>
+        <div class="card">
+            <strong>Issue</strong>
+            <p class="muted">{{ booking.issue }}</p>
+        </div>
+        <div class="card">
+            <strong>Scheduled</strong>
+            <p class="muted">{{ booking.appointment_date }} at {{ booking.appointment_time|time:"H:i" }}</p>
+        </div>
+        <div class="card">
+            <strong>Amount</strong>
+            <p class="muted">&#8377;{{ payment.amount }}</p>
+        </div>
+        <div class="card">
+            <strong>Booking status</strong>
+            <p class="muted">{{ booking.get_status_display }}</p>
+        </div>
+        <div class="card">
+            <strong>Payment status</strong>
+            <p class="muted">{{ payment.get_payment_status_display }}</p>
+        </div>
+    </div>
+    {% if payment.payment_status == 'success' %}
+    <div class="hero-actions" style="margin-top:24px;">
+        <a class="btn btn-primary" href="{{ chat_url }}">Open Consultation Chat</a>
+        <a class="btn btn-secondary" href="{% url 'client_bookings' %}">Back to Client Bookings</a>
+    </div>
+    {% elif payment.payment_status == 'awaiting_verification' %}
+    <div class="flash-message" style="margin-top:24px;">Payment verification is pending admin review. Your slot remains reserved while the booking is pending.</div>
+    <div class="hero-actions" style="margin-top:18px;">
+        <a class="btn btn-secondary" href="{% url 'client_bookings' %}">Back to Client Bookings</a>
+    </div>
+    {% else %}
+    <form method="post" style="margin-top:24px;" class="inline-meta">
+        {% csrf_token %}
+        <input type="hidden" name="payment_status" value="awaiting_verification">
+        <button class="btn btn-primary" type="submit">Request Demo Payment Verification</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

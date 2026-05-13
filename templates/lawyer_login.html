@@ -1,101 +1,24 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-<title>Lawyer Login - LexConnect</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#2c3e50,#4ca1af);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-}
-
-.container{
-width:380px;
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 10px 25px rgba(0,0,0,0.3);
-}
-
-h2{
-text-align:center;
-margin-bottom:20px;
-color:#2c3e50;
-}
-
-input{
-width:100%;
-padding:12px;
-margin:10px 0;
-border:1px solid #ccc;
-border-radius:6px;
-}
-
-button{
-width:100%;
-padding:12px;
-background:#2c3e50;
-color:white;
-border:none;
-border-radius:6px;
-font-size:16px;
-cursor:pointer;
-}
-
-button:hover{
-background:#1a252f;
-}
-
-.register-link{
-text-align:center;
-margin-top:15px;
-}
-
-.register-link a{
-color:#2c3e50;
-font-weight:bold;
-text-decoration:none;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<h2>⚖ Lawyer Login</h2>
-
-<form method="POST">
-
-{% csrf_token %}
-
-<input type="text" name="username" placeholder="Username" required>
-
-<input type="password" name="password" placeholder="Password" required>
-
-<button type="submit">Login</button>
-
-</form>
-
-<div class="register-link">
-
-New lawyer?
-
-<a href="/lawyer/register/">Register here</a>
-
+{% extends 'base.html' %}
+{% block title %}Lawyer Login{% endblock %}
+{% block content %}
+<div class="form-shell">
+    <h1 class="page-title" style="font-size:36px;">Lawyer Login</h1>
+    <p class="section-copy">Manage bookings, active chats, notifications, and online presence.</p>
+    {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        <div class="field full">
+            <label>Username</label>
+            <input type="text" name="username" value="{{ form.username.value|default:'' }}" required>
+        </div>
+        <div class="field full">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+        <div class="field full">
+            <button class="btn btn-primary" type="submit">Login as Lawyer</button>
+        </div>
+    </form>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
 </div>
-
-</div>
-
-</body>
-
-</html>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Demo Accounts{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Demo Accounts</h1>
+        <p class="section-copy">Use these credentials to demonstrate the full LexConnect role-based workflow.</p>
+    </div>
+</div>
+
+<section class="grid grid-2" style="margin-bottom:24px;">
+    <div class="panel">
+        <div class="section-head"><h3>Client Account</h3></div>
+        <p class="muted">Username: <strong>{{ client_account.username }}</strong></p>
+        <p class="muted">Password: <strong>{{ client_account.password }}</strong></p>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>All Lawyer Accounts</h3></div>
+        <p class="muted">All lawyer passwords = <strong>{{ lawyer_password }}</strong></p>
+        <p class="muted">Any verified lawyer can log in through the lawyer panel for demos.</p>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="section-head"><h3>Lawyer Login List</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Verified</th><th>Active</th></tr></thead>
+            <tbody>
+            {% for user in lawyer_accounts %}
+                <tr>
+                    <td>{{ user.lawyer_profile.name }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="chip">{% if user.lawyer_profile.is_verified %}Yes{% else %}No{% endif %}</span></td>
+                    <td><span class="chip">{% if user.is_active %}Yes{% else %}No{% endif %}</span></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="muted">No lawyer accounts found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

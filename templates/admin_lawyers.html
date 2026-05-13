@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Admin Lawyers{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Lawyer Management</h1>
+        <p class="section-copy">Verify lawyer accounts, confirm active login access, and prepare the platform for large-scale demos.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Category</th><th>Verification</th><th>Active</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for lawyer in lawyers %}
+                <tr>
+                    <td>{{ lawyer.name }}</td>
+                    <td>{{ lawyer.user.username }}</td>
+                    <td>{{ lawyer.user.email }}</td>
+                    <td>{{ lawyer.category.name }}</td>
+                    <td>
+                        <span class="chip">{{ lawyer.get_verification_status_display }}</span>
+                        {% if lawyer.certificate_file %}
+                            <a class="file-link" href="{% url 'protected_certificate_file' lawyer.id %}" target="_blank" rel="noopener">Document</a>
+                        {% endif %}
+                    </td>
+                    <td><span class="chip">{% if lawyer.user.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                    <td>
+                        <div class="inline-meta">
+                            <form method="post" action="{% url 'admin_update_lawyer_verification' lawyer.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="is_verified" value="{% if lawyer.is_verified %}false{% else %}true{% endif %}">
+                                <button class="btn btn-secondary" type="submit">{% if lawyer.is_verified %}Unverify{% else %}Verify{% endif %}</button>
+                            </form>
+                            <form method="post" action="{% url 'admin_update_user_status' lawyer.user.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="is_active" value="{% if lawyer.user.is_active %}false{% else %}true{% endif %}">
+                                <button class="btn {% if lawyer.user.is_active %}btn-danger{% else %}btn-success{% endif %}" type="submit">{% if lawyer.user.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="muted">No lawyer accounts found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

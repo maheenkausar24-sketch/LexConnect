@@ -1,33 +1,69 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
+
 from . import views
 
+
 urlpatterns = [
-
-    path('', views.home, name='home'),
-
-    path('register/', views.register, name='register'),
-    path('login/', views.login_page, name='login'),
-    path('logout/', views.logout_user, name='logout'),
-
-    path('dashboard/', views.dashboard, name='dashboard'),
-
-    path('chatbot/', views.chatbot, name='chatbot'),
-    path('ask-lexora/', views.ask_lexora, name='ask_lexora'),
-
-    path('lawyers/<int:category_id>/', views.lawyers_by_category, name='lawyers_by_category'),
-
-    path('consult/<int:lawyer_id>/', views.consult_lawyer, name='consult_lawyer'),
-
-    path("chat/start/<int:consultation_id>/", views.start_chat, name="start_chat"),
-
-    path("chat/<int:consultation_id>/", views.consultation_chat, name="consultation_chat"),  # ← FIXED
-
+    path("", views.home, name="home"),
+    path("demo-accounts/", views.demo_accounts_page, name="demo_accounts"),
+    path("register/", views.register, name="register"),
+    path("login/", views.login_page, name="login"),
+    path("logout/", views.logout_user, name="logout"),
+    path("password-reset/", views.RateLimitedPasswordResetView.as_view(), name="password_reset"),
+    path("password-reset/done/", auth_views.PasswordResetDoneView.as_view(template_name="registration/password_reset_done.html"), name="password_reset_done"),
+    path(
+        "password-reset/confirm/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="registration/password_reset_confirm.html",
+            success_url="/password-reset/complete/",
+        ),
+        name="password_reset_confirm",
+    ),
+    path("password-reset/complete/", auth_views.PasswordResetCompleteView.as_view(template_name="registration/password_reset_complete.html"), name="password_reset_complete"),
+    path("verify-email/<uidb64>/<token>/", views.verify_email, name="verify_email"),
+    path("verify-email/resend/", views.resend_verification_email, name="resend_verification_email"),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("client/dashboard/", views.client_dashboard, name="client_dashboard"),
+    path("client/bookings/", views.client_bookings, name="client_bookings"),
+    path("client/chats/", views.client_chats, name="client_chats"),
     path("lawyer/register/", views.lawyer_register, name="lawyer_register"),
     path("lawyer/login/", views.lawyer_login, name="lawyer_login"),
     path("lawyer/dashboard/", views.lawyer_dashboard, name="lawyer_dashboard"),
+    path("lawyer/bookings/", views.lawyer_bookings, name="lawyer_bookings"),
+    path("lawyer/availability/", views.lawyer_availability, name="lawyer_availability"),
+    path("lawyer/chats/", views.lawyer_chats, name="lawyer_chats"),
+    path("lawyer/toggle-status/", views.toggle_lawyer_status, name="toggle_lawyer_status"),
+    path("lawyer/availability/add/", views.add_schedule_slot, name="add_schedule_slot"),
+    path("admin/dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("admin/lawyers/", views.admin_lawyers, name="admin_lawyers"),
+    path("admin/lawyers/<int:lawyer_id>/verify/", views.admin_update_lawyer_verification, name="admin_update_lawyer_verification"),
+    path("admin/clients/", views.admin_clients, name="admin_clients"),
+    path("admin/users/<int:user_id>/status/", views.admin_update_user_status, name="admin_update_user_status"),
+    path("admin/bookings/", views.admin_bookings, name="admin_bookings"),
+    path("admin/bookings/<int:booking_id>/cancel/", views.admin_cancel_booking, name="admin_cancel_booking"),
+    path("admin/payments/", views.admin_payments, name="admin_payments"),
+    path("admin/payments/<int:payment_id>/status/", views.admin_update_payment, name="admin_update_payment"),
+    path("payments/webhooks/<str:provider>/", views.provider_webhook, name="provider_webhook"),
+    path("lawyers/<int:category_id>/", views.lawyers_by_category, name="lawyers_by_category"),
     path("lawyer/profile/<int:lawyer_id>/", views.lawyer_profile, name="lawyer_profile"),
+    path("consult/<int:lawyer_id>/", views.consult_lawyer, name="consult_lawyer"),
+    path("payment/<int:booking_id>/", views.payment_page, name="payment_page"),
+    path("booking/<int:booking_id>/<str:status>/", views.update_booking_status, name="update_booking_status"),
+    path("booking/<int:booking_id>/reschedule/", views.reschedule_booking_view, name="reschedule_booking"),
+    path("booking/<int:booking_id>/cancel/", views.cancel_booking_view, name="cancel_booking"),
     path("request-success/", views.request_success, name="request_success"),
-    path("chat/<int:chat_id>/", views.chat_page, name="chat_page"),  
-    path("my-chats/", views.user_chats, name="user_chats")
-
+    path("chat/start/<int:lawyer_id>/", views.start_chat, name="start_chat"),
+    path("chat-room/<int:chat_id>/", views.chat_page, name="chat_page"),
+    path("chat-room/<int:chat_id>/messages/", views.chat_messages, name="chat_messages"),
+    path("chat-room/<int:chat_id>/send/", views.send_message, name="send_message"),
+    path("my-chats/", views.user_chats, name="user_chats"),
+    path("review/<int:lawyer_id>/", views.add_review, name="add_review"),
+    path("notifications/", views.notifications_view, name="notifications"),
+    path("notifications/<int:notification_id>/read/", views.mark_notification_read, name="mark_notification_read"),
+    path("media/chat-file/<int:message_id>/", views.protected_chat_file, name="protected_chat_file"),
+    path("media/certificate/<int:lawyer_id>/", views.protected_certificate_file, name="protected_certificate_file"),
+    path("media/case-document/<int:document_id>/", views.protected_case_document, name="protected_case_document"),
+    path("chatbot/", views.chatbot, name="chatbot"),
+    path("ask-lexora/", views.ask_lexora, name="ask_lexora"),
 ]

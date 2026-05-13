@@ -1,74 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-<title>LexConnect Login</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#4facfe,#00f2fe);
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-
-.login-box{
-background:white;
-padding:40px;
-border-radius:10px;
-width:350px;
-text-align:center;
-box-shadow:0 10px 20px rgba(0,0,0,0.2);
-}
-
-input{
-width:100%;
-padding:10px;
-margin:10px 0;
-border-radius:6px;
-border:1px solid #ccc;
-}
-
-button{
-width:100%;
-padding:10px;
-background:#4facfe;
-border:none;
-color:white;
-font-size:16px;
-border-radius:6px;
-cursor:pointer;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="login-box">
-
-<h2>Login</h2>
-
-<form method="POST">
-
-{% csrf_token %}
-
-<input type="text" name="username" placeholder="Username" required><br>
-
-<input type="password" name="password" placeholder="Password" required><br>
-
-<button type="submit">Login</button>
-
-</form>
-
-{% if error %}
-<p style="color:red">{{ error }}</p>
-{% endif %}
+{% extends 'base.html' %}
+{% block title %}Client Login{% endblock %}
+{% block content %}
+<div class="form-shell">
+    <h1 class="page-title" style="font-size:36px;">Platform Login</h1>
+    <p class="section-copy">Clients and admins can sign in here. You will be routed automatically to the correct dashboard after login.</p>
+    {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        <div class="field full">
+            <label>Username</label>
+            <input type="text" name="username" value="{{ form.username.value|default:'' }}" required>
+        </div>
+        <div class="field full">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+        <div class="field full">
+            <button class="btn btn-primary" type="submit">Login</button>
+        </div>
+    </form>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
 </div>
-
-</body>
-</html>
+{% endblock %}

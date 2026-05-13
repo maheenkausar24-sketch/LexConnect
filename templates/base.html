@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LexConnect{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'main/css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="site-shell">
+    <nav class="site-nav">
+        <div class="nav-inner">
+            <a class="brand" href="{% url 'home' %}">
+                <span class="brand-badge">&#9878;</span>
+                <span>LexConnect</span>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="{% url 'home' %}">Home</a>
+                <a class="nav-link" href="{% url 'demo_accounts' %}">Demo Accounts</a>
+                {% if request.user.is_authenticated %}
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                        <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+                        <a class="nav-link" href="{% url 'admin_lawyers' %}">Lawyers</a>
+                        <a class="nav-link" href="{% url 'admin_clients' %}">Clients</a>
+                        <a class="nav-link" href="{% url 'admin_bookings' %}">Bookings</a>
+                        <a class="nav-link" href="{% url 'admin_payments' %}">Payments</a>
+                    {% elif request.user.profile.is_lawyer %}
+                        <a class="nav-link" href="{% url 'lawyer_dashboard' %}">Lawyer Dashboard</a>
+                        <a class="nav-link" href="{% url 'lawyer_bookings' %}">Bookings</a>
+                        <a class="nav-link" href="{% url 'lawyer_availability' %}">Availability</a>
+                        <a class="nav-link" href="{% url 'lawyer_chats' %}">Chats</a>
+                    {% else %}
+                        <a class="nav-link" href="{% url 'client_dashboard' %}">Client Dashboard</a>
+                        <a class="nav-link" href="{% url 'client_bookings' %}">Bookings</a>
+                        <a class="nav-link" href="{% url 'client_chats' %}">Chats</a>
+                    {% endif %}
+                    <a class="nav-link" href="{% url 'notifications' %}">
+                        Notifications
+                        {% if unread_notifications_count %}
+                            <span class="badge">{{ unread_notifications_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="nav-link" href="{% url 'chatbot' %}">Lexora</a>
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'login' %}">Platform Login</a>
+                    <a class="nav-link" href="{% url 'lawyer_login' %}">Lawyer Login</a>
+                    <a class="nav-link" href="{% url 'register' %}">Client Sign Up</a>
+                    <a class="nav-link" href="{% url 'lawyer_register' %}">Join as Lawyer</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-container">
+        {% if messages %}
+            <div class="message-stack">
+                {% for message in messages %}
+                    <div class="flash-message {% if message.tags == 'error' %}error-message{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if request.user.is_authenticated and not request.user.profile.email_verified %}
+            <div class="flash-message">
+                Your email is not verified yet.
+                <form method="post" action="{% url 'resend_verification_email' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="button-link" type="submit">Resend verification email</button>
+                </form>
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

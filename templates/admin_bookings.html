@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Admin Bookings{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Booking Oversight</h1>
+        <p class="section-copy">Inspect every consultation across clients and lawyers and force cancel active bookings when needed.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>ID</th><th>Client</th><th>Lawyer</th><th>Schedule</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for booking in bookings %}
+                <tr>
+                    <td>#{{ booking.id }}</td>
+                    <td>{{ booking.client.username }}</td>
+                    <td>{{ booking.lawyer.name }}</td>
+                    <td>{{ booking.appointment_date }} {{ booking.appointment_time|time:"H:i" }}</td>
+                    <td><span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                    <td><span class="status-{{ booking.payment.payment_status }}">{{ booking.payment.get_payment_status_display }}</span></td>
+                    <td>
+                        {% if booking.status != 'cancelled' and booking.status != 'completed' %}
+                            <form method="post" action="{% url 'admin_cancel_booking' booking.id %}">
+                                {% csrf_token %}
+                                <button class="btn btn-danger" type="submit">Force Cancel</button>
+                            </form>
+                        {% else %}
+                            <span class="muted">Locked</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="muted">No bookings found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

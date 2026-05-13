@@ -1,129 +1,104 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<title>Lawyer Dashboard - LexConnect</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#2c3e50,#4ca1af);
-min-height:100vh;
-}
-
-.header{
-background:#1a252f;
-color:white;
-padding:15px 40px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.header h2{
-margin:0;
-}
-
-.logout{
-background:#e74c3c;
-color:white;
-padding:8px 14px;
-border-radius:6px;
-text-decoration:none;
-}
-
-.container{
-padding:40px;
-}
-
-.title{
-color:white;
-margin-bottom:20px;
-}
-
-.card{
-background:white;
-padding:20px;
-border-radius:10px;
-margin-bottom:15px;
-box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-.card h3{
-margin:0 0 10px 0;
-}
-
-.chat-btn{
-background:#2c3e50;
-color:white;
-padding:8px 14px;
-border-radius:6px;
-text-decoration:none;
-}
-
-.empty{
-background:white;
-padding:30px;
-border-radius:10px;
-text-align:center;
-}
-
-</style>
-
-</head>
-
-<body>
-    
-
-<div class="header">
-
-<h2>⚖ LexConnect Lawyer Panel</h2>
-
-<a class="logout" href="/logout/">Logout</a>
-
+{% extends 'base.html' %}
+{% block title %}Lawyer Dashboard{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">{{ lawyer.name }}'s Dashboard</h1>
+        <p class="section-copy">{{ lawyer.category.name }} &middot; {{ lawyer.get_verification_status_display }} &middot; {{ lawyer.status_label }} &middot; &#8377;{{ lawyer.fee }} per consultation. Use this panel to monitor bookings, availability, and active client chats.</p>
+    </div>
+    <form method="post" action="{% url 'toggle_lawyer_status' %}">
+        {% csrf_token %}
+        <button class="btn {% if lawyer.is_online %}btn-danger{% else %}btn-primary{% endif %}" type="submit" {% if not lawyer.is_verified %}disabled{% endif %}>
+            {% if lawyer.is_online %}Go Offline{% else %}Go Online{% endif %}
+        </button>
+    </form>
 </div>
 
-<div class="container">
+<section class="grid grid-3" style="margin-bottom:24px;">
+    <div class="stat-card"><span class="muted">Bookings</span><strong>{{ incoming_bookings|length }}</strong></div>
+    <div class="stat-card"><span class="muted">Active chats</span><strong>{{ active_chats|length }}</strong></div>
+    <div class="stat-card"><span class="muted">Confirmed</span><strong>{{ confirmed_total }}</strong></div>
+    <div class="stat-card"><span class="muted">Completed</span><strong>{{ completed_total }}</strong></div>
+    <div class="stat-card"><span class="muted">Earnings</span><strong>&#8377;{{ earnings }}</strong></div>
+</section>
 
-    <h2 style="margin-top:20px;">
-Welcome Advocate {{ lawyer.name }}
-</h2>
-<h2 class="title">Your Consultation Requests</h2>
+<section class="hero-actions" style="margin-bottom:24px;">
+    <a class="btn btn-secondary" href="{% url 'lawyer_bookings' %}">Manage Bookings</a>
+    <a class="btn btn-secondary" href="{% url 'lawyer_availability' %}">Manage Availability</a>
+    <a class="btn btn-secondary" href="{% url 'lawyer_chats' %}">Open Chats</a>
+</section>
 
-{% if consultations %}
+<section class="grid grid-2">
+    <div class="panel">
+        <div class="section-head"><h3>Incoming Booking Requests</h3></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Client</th><th>Schedule</th><th>Issue</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for booking in incoming_bookings %}
+                    <tr>
+                        <td>{{ booking.client.username }}</td>
+                        <td>{{ booking.appointment_date }} {{ booking.appointment_time|time:"H:i" }}</td>
+                        <td>{{ booking.issue|truncatechars:60 }}</td>
+                        <td><span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                        <td><span class="status-{{ booking.payment.payment_status }}">{{ booking.payment.get_payment_status_display }}</span></td>
+                        <td>
+                            <div class="inline-meta">
+                                {% if booking.status == 'confirmed' %}
+                                    <form method="post" action="{% url 'update_booking_status' booking.id 'completed' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Complete</button></form>
+                                    <form method="post" action="{% url 'update_booking_status' booking.id 'cancelled' %}">{% csrf_token %}<button class="btn btn-danger" type="submit">Cancel</button></form>
+                                {% elif booking.status == 'pending' %}
+                                    <span class="muted">Waiting for client payment</span>
+                                {% elif booking.status == 'completed' %}
+                                    <span class="muted">Completed</span>
+                                {% elif booking.status == 'cancelled' %}
+                                    <span class="muted">Cancelled</span>
+                                {% else %}
+                                    <span class="muted">No action</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="muted">No booking requests yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Active Chats</h3></div>
+        <div class="grid">
+            {% for chat in active_chats %}
+                <a class="chat-list-item" href="{% url 'chat_page' chat.id %}">
+                    <div class="inline-meta">
+                        <strong>{{ chat.client.username }}</strong>
+                        <span class="muted">{{ chat.updated_at|date:"d M, h:i A" }}</span>
+                    </div>
+                    <p class="muted">Booking #{{ chat.booking.id }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
+                </a>
+            {% empty %}
+                <div class="empty-card">No active chats yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
 
-{% for consult in consultations %}
-<div class="card">
-
-<h3>Client: {{consult.user}}</h3>
-
-<p><b>Email:</b> {{consult.user.email}}</p>
-
-<p><b>Issue:</b> {{consult.issue}}</p>
-
-<a href="/chat/start/{{ consult.id }}/">Start Chat</a>
-
-</div>
-
-{% endfor %}
-
-{% else %}
-
-<div class="empty">
-
-<h3>No consultation requests yet</h3>
-
-<p>Clients will appear here when they request help.</p>
-
-</div>
-
-{% endif %}
-
-</div>
-
-</body>
-
-</html>
+<section class="panel" style="margin-top:24px;">
+    <div class="section-head"><h3>Availability Schedule</h3></div>
+    <p class="muted">Availability is now managed from the dedicated availability panel to keep the lawyer workflow focused.</p>
+    <div class="hero-actions" style="margin-top:16px;">
+        <a class="btn btn-primary" href="{% url 'lawyer_availability' %}">Open Availability Panel</a>
+    </div>
+    <div class="grid" style="margin-top:18px;">
+        {% for slot in availability_slots %}
+            <div class="card">
+                <strong>{{ slot.get_weekday_display }}</strong>
+                <p class="muted">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</p>
+            </div>
+        {% empty %}
+            <div class="empty-card">No availability slots added yet.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

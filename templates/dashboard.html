@@ -1,233 +1,120 @@
-<!DOCTYPE html>
-
-<html>
-
-<head>
-<title>LexConnect Dashboard</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial, Helvetica, sans-serif;
-background:linear-gradient(135deg,#4b6cb7,#8e44ad);
-color:white;
-}
-
-/* HEADER */
-
-.header{
-text-align:center;
-padding:35px;
-font-size:34px;
-font-weight:bold;
-letter-spacing:1px;
-}
-
-/* MAIN SECTION */
-
-.container{
-text-align:center;
-padding:20px 50px 60px 50px;
-}
-
-/* CATEGORY GRID */
-
-.category-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:30px;
-margin-top:40px;
-}
-
-/* CATEGORY CARD */
-
-.category-card{
-background:white;
-color:#333;
-padding:25px;
-border-radius:14px;
-box-shadow:0 8px 18px rgba(0,0,0,0.2);
-transition:0.35s;
-cursor:pointer;
-text-align:center;
-}
-
-.category-card:hover{
-transform:translateY(-8px) scale(1.03);
-box-shadow:0 15px 30px rgba(0,0,0,0.35);
-}
-
-/* ICON */
-
-.icon{
-font-size:40px;
-margin-bottom:10px;
-}
-
-/* TITLE */
-
-.category-card h3{
-margin:8px 0;
-color:#4b6cb7;
-}
-
-/* DESCRIPTION */
-
-.category-card p{
-font-size:14px;
-color:#555;
-}
-
-/* AI SECTION */
-
-.ai-section{
-margin-top:60px;
-}
-
-.ai-btn{
-background:#4b6cb7;
-color:white;
-border:none;
-padding:14px 30px;
-font-size:16px;
-border-radius:10px;
-cursor:pointer;
-transition:0.3s;
-}
-
-.ai-btn:hover{
-background:#364c91;
-transform:scale(1.05);
-}
-
-/* USER */
-
-.user-section{
-margin-top:40px;
-}
-
-.logout-btn{
-margin-top:10px;
-padding:10px 25px;
-border:none;
-background:#e74c3c;
-color:white;
-border-radius:8px;
-cursor:pointer;
-font-size:15px;
-}
-
-.logout-btn:hover{
-background:#c0392b;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="header">
-⚖ LexConnect Legal Services
+{% extends 'base.html' %}
+{% block title %}Client Dashboard{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Welcome back, {{ request.user.username }}</h1>
+        <p class="section-copy">Client panel: browse lawyers, book a visible slot, complete demo payment, move into chat, then return after completion to leave a review.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'chatbot' %}">Ask Lexora</a>
 </div>
 
-<div class="container">
+<section class="grid grid-4" style="margin-bottom:24px;">
+    <div class="stat-card"><span class="muted">Categories</span><strong>{{ categories|length }}</strong></div>
+    <div class="stat-card"><span class="muted">Active chats</span><strong>{{ recent_chats|length }}</strong></div>
+    <div class="stat-card"><span class="muted">Total bookings</span><strong>{{ booking_total }}</strong></div>
+    <div class="stat-card"><span class="muted">Completed consultations</span><strong>{{ completed_total }}</strong></div>
+</section>
 
-<h2>Choose Legal Category</h2>
+<section class="panel" style="margin-bottom:24px;">
+    <div class="section-head">
+        <h2>Browse Legal Categories</h2>
+        <span class="muted">Choose your legal problem and connect with the right expert.</span>
+    </div>
+    <div class="category-grid">
+        {% for category in categories %}
+            <a class="category-card" href="{% url 'lawyers_by_category' category.id %}">
+                <div class="icon">&#9878;</div>
+                <h3>{{ category.name }}</h3>
+                <p class="muted">{{ category.description|default:"Find available lawyers in this area of law." }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
 
-<div class="category-grid">
+<section class="grid grid-2">
+    <div class="panel">
+        <div class="section-head"><h3>Recent Bookings</h3></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Lawyer</th><th>Schedule</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for booking in recent_bookings %}
+                    <tr>
+                        <td>{{ booking.lawyer.name }}</td>
+                        <td>{{ booking.appointment_date }} {{ booking.appointment_time|time:"H:i" }}</td>
+                        <td><span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                        <td><span class="status-{{ booking.payment.payment_status }}">{{ booking.payment.get_payment_status_display }}</span></td>
+                        <td>
+                            <div class="inline-meta">
+                                {% if booking.payment.payment_status != 'success' %}
+                                    <a class="btn btn-secondary" href="{% url 'payment_page' booking.id %}">Payment</a>
+                                {% endif %}
+                                {% if booking.payment.payment_status == 'success' and booking.status != 'cancelled' %}
+                                    <a class="btn btn-primary" href="{% url 'start_chat' booking.lawyer.id %}">Open Chat</a>
+                                {% endif %}
+                                {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                                    <form method="post" action="{% url 'reschedule_booking' booking.id %}">
+                                        {% csrf_token %}
+                                        <input type="date" name="appointment_date" required>
+                                        <input type="time" name="appointment_time" required>
+                                        <button class="btn btn-secondary" type="submit">Reschedule</button>
+                                    </form>
+                                    <form method="post" action="{% url 'cancel_booking' booking.id %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger" type="submit">Cancel</button>
+                                    </form>
+                                {% endif %}
+                                {% if booking.status == 'completed' %}
+                                    <a class="btn btn-primary" href="{% url 'lawyer_profile' booking.lawyer.id %}">Review</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="muted">No bookings yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Recent Payments</h3></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Booking</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for payment in recent_payments %}
+                    <tr>
+                        <td>#{{ payment.booking.id }} &middot; {{ payment.booking.lawyer.name }}</td>
+                        <td>&#8377;{{ payment.amount }}</td>
+                        <td><span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3" class="muted">No payments yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-{% for law in laws %}
-
-<a href="/lawyers/{{ law.id }}/" style="text-decoration:none">
-
-<div class="category-card">
-
-<div class="icon">
-
-{% if law.name|lower == "family law" %}
-👨‍👩‍👧
-
-{% elif law.name|lower == "property law" %}
-🏠
-
-{% elif law.name|lower == "criminal law" %}
-🚔
-
-{% elif law.name|lower == "cyber law" %}
-💻
-
-{% elif law.name|lower == "consumer law" %}
-🛒
-
-{% elif law.name|lower == "corporate law" %}
-🏢
-
-{% else %}
-⚖
-{% endif %}
-
-</div>
-
-<h3>{{ law.name }}</h3>
-
-{% if law.name|lower == "family law" %}
-
-<p>Divorce & marriage disputes</p>
-
-{% elif law.name|lower == "property law" %}
-
-<p>Land ownership issues</p>
-
-{% elif law.name|lower == "criminal law" %}
-
-<p>Theft & assault cases</p>
-
-{% elif law.name|lower == "cyber law" %}
-
-<p>Online fraud & hacking</p>
-
-{% elif law.name|lower == "consumer law" %}
-
-<p>Product fraud & complaints</p>
-
-{% elif law.name|lower == "corporate law" %}
-
-<p>Business compliance & contracts</p>
-
-{% endif %}
-
-</div>
-
-</a>
-
-{% endfor %}
-
-</div>
-
-<div class="ai-section">
-
-<h3>Need AI Guidance?</h3>
-
-<a href="/chatbot/">
-<button class="ai-btn">Ask Lexora AI</button>
-</a>
-
-</div>
-
-<div class="user-section">
-
-<h2>Welcome {{ request.user.username }}</h2>
-
-<a href="/logout/">
-<button class="logout-btn">Logout</button>
-</a>
-
-</div>
-
-</div>
-
-</body>
-
-</html>
+<section class="panel" style="margin-top:24px;">
+    <div class="section-head"><h3>Top Online Lawyers</h3></div>
+    <div class="lawyer-grid">
+        {% for lawyer in featured_lawyers %}
+            <div class="lawyer-card">
+                <div class="inline-meta">
+                    <strong>{{ lawyer.name }}</strong>
+                    <span class="status-pill"><span class="dot {% if lawyer.is_online %}online{% endif %}"></span>{{ lawyer.status_label }}</span>
+                </div>
+                <p class="muted">{{ lawyer.category.name }} &middot; &#8377;{{ lawyer.fee }} &middot; {{ lawyer.experience }} years</p>
+                <div class="hero-actions">
+                    <a class="btn btn-secondary" href="{% url 'lawyer_profile' lawyer.id %}">View</a>
+                    <a class="btn btn-primary" href="{% url 'consult_lawyer' lawyer.id %}">Book</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

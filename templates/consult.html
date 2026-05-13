@@ -1,103 +1,54 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-<title>Consult {{ lawyer.name }}</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:linear-gradient(120deg,#4a6cf7,#6a8bff);
-margin:0;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-}
-
-.container{
-background:white;
-padding:40px;
-border-radius:12px;
-box-shadow:0 10px 25px rgba(0,0,0,0.2);
-width:400px;
-}
-
-h2{
-text-align:center;
-margin-bottom:25px;
-color:#333;
-}
-
-input, textarea{
-width:100%;
-padding:12px;
-margin-bottom:15px;
-border-radius:6px;
-border:1px solid #ccc;
-font-size:14px;
-}
-
-textarea{
-height:120px;
-resize:none;
-}
-
-button{
-width:100%;
-padding:12px;
-background:#4a6cf7;
-border:none;
-border-radius:6px;
-color:white;
-font-size:16px;
-cursor:pointer;
-}
-
-button:hover{
-background:#324ed1;
-}
-
-.back{
-margin-top:15px;
-text-align:center;
-}
-
-.back a{
-text-decoration:none;
-color:#4a6cf7;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<h2>Consult {{ lawyer.name }}</h2>
-
-<form method="POST">
-
-{% csrf_token %}
-
-<input type="text" name="name" placeholder="Your Name" required>
-
-<input type="email" name="email" placeholder="Your Email" required>
-
-<textarea name="issue" placeholder="Describe your legal issue..." required></textarea>
-
-<button type="submit">Submit Consultation</button>
-
-</form>
-
-<div class="back">
-<a href="/dashboard/">← Back to Dashboard</a>
+{% extends 'base.html' %}
+{% block title %}Book Consultation{% endblock %}
+{% block content %}
+<div class="form-shell">
+    <h1 class="page-title" style="font-size:36px;">Book Consultation with {{ lawyer.name }}</h1>
+    <p class="section-copy">Choose a slot from the lawyer's published schedule, continue to demo payment, and chat will unlock automatically after payment succeeds.</p>
+    {% if upcoming_statuses %}
+    <div class="card" style="margin-bottom:18px;">
+        <strong>Upcoming slots</strong>
+        <div class="grid" style="margin-top:12px;">
+            {% for slot in upcoming_statuses %}
+                <div class="muted">
+                    {{ slot.date }} at {{ slot.start_time|time:"H:i" }}
+                    <span class="{% if slot.is_available %}chip{% else %}status-cancelled{% endif %}">{{ slot.status_label }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% if availability_slots %}
+    <div class="card" style="margin-bottom:18px;">
+        <strong>Weekly schedule</strong>
+        <div class="grid" style="margin-top:12px;">
+            {% for slot in availability_slots %}
+                <div class="muted">{{ slot.get_weekday_display }}: {{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        <div class="field full">
+            <label>Your legal issue</label>
+            <textarea name="issue" placeholder="Describe the issue, timeline, and what kind of help you need." required>{{ form.issue.value|default:'' }}</textarea>
+        </div>
+        <div class="field full">
+            <label>Choose an available slot</label>
+            <select name="slot_choice" {% if upcoming_slots %}required{% endif %}>
+                {% for value, label in form.fields.slot_choice.choices %}
+                    <option value="{{ value }}" {% if form.slot_choice.value == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <p class="muted">Slots are based on the lawyer's active weekly schedule and current bookings.</p>
+        </div>
+        <div class="field full">
+            <button class="btn btn-primary" type="submit" {% if not upcoming_slots %}disabled{% endif %}>Continue to Payment</button>
+        </div>
+    </form>
+    {% if not upcoming_slots %}
+    <p class="muted" style="margin-top:16px;">No upcoming slots are available right now. Ask the lawyer to publish more availability from the lawyer panel.</p>
+    {% endif %}
 </div>
-
-</div>
-
-</body>
-</html>
+{% endblock %}

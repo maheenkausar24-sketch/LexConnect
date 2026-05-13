@@ -1,12 +1,36 @@
-<h2>My Chats</h2>
+{% extends 'base.html' %}
+{% block title %}Chats{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">{{ page_title|default:"Your Conversations" }}</h1>
+        <p class="section-copy">{{ page_copy|default:"Continue legal consultations in secure booking-linked chat rooms." }}</p>
+    </div>
+</div>
 
-{% for chat in chats %}
-
-<p>
-Chat with {{ chat.lawyer.name }}
-
-<a href="/chat/{{ chat.id }}/">Open Chat</a>
-
-</p>
-
-{% endfor %}
+<div class="grid">
+    {% for chat in chats %}
+        <a class="chat-list-item" href="{% url 'chat_page' chat.id %}">
+            <div class="section-head">
+                <strong>
+                    {% if request.user.profile.is_lawyer %}
+                        {{ chat.client.username }}
+                    {% else %}
+                        {{ chat.lawyer.name }}
+                    {% endif %}
+                </strong>
+                <span class="muted">{{ chat.updated_at|date:"d M h:i A" }}</span>
+            </div>
+            <p class="muted">
+                {% if request.user.profile.is_lawyer %}
+                    Booking #{{ chat.booking.id }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}
+                {% else %}
+                    {{ chat.lawyer.category.name }} &middot; Booking #{{ chat.booking.id }}
+                {% endif %}
+            </p>
+        </a>
+    {% empty %}
+        <div class="empty-card">No chats yet. Chat becomes available after a booking is paid and confirmed.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,207 +1,90 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<div class="chat-shell" data-chat-root data-ws-path="{{ ws_path }}" data-send-url="{{ send_message_url }}" data-messages-url="{{ messages_url }}" data-current-user-id="{{ request.user.id }}">
+    <aside class="chat-sidebar panel">
+        <div class="section-head">
+            <div>
+                <h3>
+                    {% if request.user.profile.is_lawyer %}
+                        {{ chat.client.username }}
+                    {% else %}
+                        {{ chat.lawyer.name }}
+                    {% endif %}
+                </h3>
+                <p class="muted">
+                    {% if request.user.profile.is_lawyer %}
+                        Client conversation
+                    {% else %}
+                        {{ chat.lawyer.category.name }} &middot; {{ chat.lawyer.status_label }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <strong>Linked Booking</strong>
+            <p class="muted">#{{ chat.booking.id }} &middot; {{ chat.booking.get_status_display }} &middot; {{ chat.booking.appointment_date }} {{ chat.booking.appointment_time|time:"H:i" }}</p>
+        </div>
+        <div class="footer-note">Messages appear instantly using WebSockets powered by Django Channels.</div>
+    </aside>
 
-<head>
-<title>Chat</title>
+    <section class="chat-room">
+        <div class="panel" style="border-radius:0; box-shadow:none; border:none; border-bottom:1px solid rgba(15,23,42,0.08);">
+            <div class="section-head" style="margin:0;">
+                <div>
+                    <h3>{% if request.user.profile.is_lawyer %}{{ chat.client.username }}{% else %}{{ chat.lawyer.name }}{% endif %}</h3>
+                    <p class="muted">{% if request.user.profile.is_lawyer %}Client{% else %}{{ chat.lawyer.status_label }}{% endif %}</p>
+                </div>
+            </div>
+        </div>
 
-<style>
+        <div class="chat-messages" data-chat-messages>
+            {% for message in messages %}
+                <div class="chat-bubble {% if message.sender == request.user %}self{% else %}other{% endif %}" data-message-id="{{ message.id }}">
+                    {% if message.text %}<div>{{ message.text }}</div>{% endif %}
+                    {% if message.file %}
+                        {% with file_name=message.file.name|cut:'chat_files/' %}
+                            {% if file_name|lower|slice:"-4:" == ".png" or file_name|lower|slice:"-4:" == ".jpg" or file_name|lower|slice:"-5:" == ".jpeg" or file_name|lower|slice:"-4:" == ".gif" or file_name|lower|slice:"-5:" == ".webp" or file_name|lower|slice:"-4:" == ".bmp" or file_name|lower|slice:"-4:" == ".svg" %}
+                                <a class="chat-image-link" href="{% url 'protected_chat_file' message.id %}" target="_blank" rel="noopener">
+                                    <img class="chat-image" src="{% url 'protected_chat_file' message.id %}" alt="{{ file_name }}">
+                                </a>
+                            {% endif %}
+                            <a class="file-link" href="{% url 'protected_chat_file' message.id %}" target="_blank" rel="noopener">{{ file_name }}</a>
+                        {% endwith %}
+                    {% endif %}
+                    <div class="chat-meta">{{ message.timestamp|date:"d M h:i A" }}</div>
+                </div>
+            {% empty %}
+                <div class="empty-card" data-empty-state>No messages yet. Start the conversation below.</div>
+            {% endfor %}
+        </div>
 
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#5b6df0,#8e66f5);
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.chat-container{
-width:500px;
-background:white;
-border-radius:15px;
-overflow:hidden;
-}
-
-.chat-header{
-background:#5b6df0;
-color:white;
-padding:15px;
-font-size:18px;
-}
-
-.chat-box{
-height:400px;
-overflow-y:auto;
-padding:20px;
-background:#f4f6fb;
-}
-
-.chat-input{
-display:flex;
-padding:10px;
-border-top:1px solid #ddd;
-}
-
-.chat-input input{
-flex:1;
-padding:10px;
-border-radius:20px;
-border:1px solid #ccc;
-}
-
-.chat-input button{
-margin-left:10px;
-background:#5b6df0;
-color:white;
-border:none;
-padding:10px 20px;
-border-radius:20px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="chat-container">
-
-<div class="chat-header">
-Chat with {{ chat.lawyer.name }}
+        <div class="chat-form-panel">
+            <div class="chat-preview" data-preview>
+                <img data-preview-image alt="Attachment preview" style="display:none; width:54px; height:54px; border-radius:14px; object-fit:cover;">
+                <div style="flex:1;">
+                    <strong data-preview-name></strong>
+                    <div class="muted" data-preview-type></div>
+                </div>
+                <button class="btn btn-danger" type="button" data-remove-preview>Remove</button>
+            </div>
+            <form class="chat-composer" data-chat-form>
+                {% csrf_token %}
+                <div class="chat-input-wrap">
+                    <label class="tool-btn file-trigger" title="Attach file">
+                        <span>&#128206;</span>
+                        <input data-file-input type="file" name="file">
+                    </label>
+                    <button class="tool-btn" type="button" data-mic-button title="Voice input">&#127908;</button>
+                    <input data-message-input type="text" name="text" placeholder="Type your message...">
+                </div>
+                <button class="tool-btn send-btn" type="submit" data-send-button>&#10148;</button>
+            </form>
+        </div>
+    </section>
 </div>
-
-<style>
-
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#5b6df0,#8e66f5);
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.chat-container{
-width:520px;
-background:white;
-border-radius:15px;
-overflow:hidden;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-display:flex;
-flex-direction:column;
-}
-
-.chat-header{
-background:#5b6df0;
-color:white;
-padding:15px;
-font-size:18px;
-font-weight:bold;
-}
-
-.chat-box{
-height:420px;
-overflow-y:auto;
-padding:20px;
-background:#f4f6fb;
-display:flex;
-flex-direction:column;
-}
-
-.message{
-max-width:70%;
-padding:10px 15px;
-margin-bottom:10px;
-border-radius:12px;
-font-size:14px;
-}
-
-.user-message{
-background:#5b6df0;
-color:white;
-align-self:flex-end;
-}
-
-.lawyer-message{
-background:#e4e6eb;
-color:black;
-align-self:flex-start;
-}
-
-.time{
-font-size:10px;
-opacity:0.7;
-margin-top:5px;
-}
-
-.chat-input{
-display:flex;
-padding:12px;
-border-top:1px solid #ddd;
-}
-
-.chat-input input{
-flex:1;
-padding:10px;
-border-radius:20px;
-border:1px solid #ccc;
-}
-
-.chat-input button{
-margin-left:10px;
-background:#5b6df0;
-color:white;
-border:none;
-padding:10px 20px;
-border-radius:20px;
-cursor:pointer;
-}
-
-</style>
-
-<div class="chat-box" id="chat-box">
-
-{% for message in messages %}
-
-{% if message.sender == request.user %}
-
-<div class="message user-message">
-{{ message.text }}
-<div class="time">{{ message.created_at|time:"H:i" }}</div>
-</div>
-
-{% else %}
-
-<div class="message lawyer-message">
-{{ message.text }}
-<div class="time">{{ message.created_at|time:"H:i" }}</div>
-</div>
-
-{% endif %}
-
-{% endfor %}
-
-</div>
-
-<form method="POST" class="chat-input">
-
-{% csrf_token %}
-
-<input type="text" name="text" placeholder="Type your message..." required>
-
-<button type="submit">Send</button>
-
-</form>
-
-</div>
-
-<script>
-
-var chatBox = document.getElementById("chat-box");
-
-chatBox.scrollTop = chatBox.scrollHeight;
-
-</script>
-
-</body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'main/js/chat.js' %}"></script>
+{% endblock %}

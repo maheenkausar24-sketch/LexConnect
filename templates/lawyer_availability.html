@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Lawyer Availability{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Availability Panel</h1>
+        <p class="section-copy">Publish consultation windows so clients can choose visible slots instead of typing dates manually.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'lawyer_dashboard' %}">Back to Dashboard</a>
+</div>
+
+<section class="grid grid-2">
+    <div class="panel">
+        <div class="section-head"><h3>Add Availability Slot</h3></div>
+        <form method="post" action="{% url 'add_schedule_slot' %}" class="form-grid">
+            {% csrf_token %}
+            <div class="field">
+                <label>Weekday</label>
+                <select name="weekday" required>
+                    {% for value, label in availability_form.fields.weekday.choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Start time</label>
+                <input type="time" name="start_time" required>
+            </div>
+            <div class="field">
+                <label>End time</label>
+                <input type="time" name="end_time" required>
+            </div>
+            <div class="field">
+                <label>Slot duration</label>
+                <select name="slot_duration_minutes">
+                    <option value="30">30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Active</label>
+                <select name="is_active">
+                    <option value="on">Yes</option>
+                </select>
+            </div>
+            <div class="field full">
+                <button class="btn btn-primary" type="submit">Save Slot</button>
+            </div>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Published Slots</h3></div>
+        <div class="grid">
+            {% for slot in availability_slots %}
+                <div class="card">
+                    <strong>{{ slot.get_weekday_display }}</strong>
+                    <p class="muted">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }} &middot; {{ slot.slot_duration_minutes }} min slots</p>
+                    <span class="chip">{% if slot.is_active %}Active{% else %}Inactive{% endif %}</span>
+                </div>
+            {% empty %}
+                <div class="empty-card">No availability slots added yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

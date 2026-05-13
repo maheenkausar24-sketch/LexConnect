@@ -1,136 +1,118 @@
-<!DOCTYPE html>
-
-<html>
-
-<head>
-    <title>{{ category.name }} Lawyers</title>
-
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f6fb;
-            margin: 0;
-        }
-
-        .header {
-            background: linear-gradient(90deg, #4a6cf7, #6a8bff);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        .container {
-            width: 80%;
-            margin: auto;
-            margin-top: 40px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            transition: 0.3s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .info {
-            color: #555;
-            margin-bottom: 8px;
-        }
-
-        button {
-            background: #4a6cf7;
-            border: none;
-            padding: 10px 18px;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: #324ed1;
-        }
-
-        .back {
-            text-align: center;
-            margin-top: 40px;
-        }
-
-        .back a {
-            text-decoration: none;
-            background: #333;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 6px;
-        }
-    </style>
-
-</head>
-
-<body>
-
-    <div class="header">
-        {{ category.name }} Lawyers
+{% extends 'base.html' %}
+{% block title %}{{ category.name }} Lawyers{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">{{ category.name }} Lawyers</h1>
+        <p class="section-copy">Discover verified experts, compare ratings, and book a secure consultation.</p>
     </div>
+</div>
 
-    <div class="container">
+<section class="panel" style="margin-bottom:24px;">
+    <form method="get" class="form-grid">
+        <div class="field">
+            <label>Search lawyer or specialization</label>
+            <input type="text" name="q" value="{{ search_form.q.value|default:'' }}" placeholder="Family disputes, contracts, property...">
+        </div>
+        <div class="field">
+            <label>Specialization</label>
+            <select name="specialization">
+                <option value="">All specializations</option>
+                {% for specialization in specialization_options %}
+                    <option value="{{ specialization }}" {% if search_form.specialization.value == specialization %}selected{% endif %}>{{ specialization }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>City</label>
+            <input type="text" name="location" value="{{ search_form.location.value|default:'' }}" placeholder="Bangalore, Delhi, Mumbai...">
+        </div>
+        <div class="field">
+            <label>Availability</label>
+            <select name="availability">
+                <option value="" {% if search_form.availability.value == '' or not search_form.availability.value %}selected{% endif %}>All verified lawyers</option>
+                <option value="online" {% if search_form.availability.value == 'online' %}selected{% endif %}>Available for chat now</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Minimum experience</label>
+            <input type="number" name="min_experience" min="0" value="{{ search_form.min_experience.value|default:'' }}">
+        </div>
+        <div class="field">
+            <label>Maximum experience</label>
+            <input type="number" name="max_experience" min="0" value="{{ search_form.max_experience.value|default:'' }}">
+        </div>
+        <div class="field">
+            <label>Minimum rating</label>
+            <select name="min_rating">
+                <option value="">Any rating</option>
+                <option value="4.5" {% if search_form.min_rating.value == '4.5' %}selected{% endif %}>4.5+</option>
+                <option value="4.0" {% if search_form.min_rating.value == '4.0' %}selected{% endif %}>4.0+</option>
+                <option value="3.0" {% if search_form.min_rating.value == '3.0' %}selected{% endif %}>3.0+</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Sort by</label>
+            <select name="sort">
+                <option value="" {% if not search_form.sort.value %}selected{% endif %}>Recommended</option>
+                <option value="rating_desc" {% if search_form.sort.value == 'rating_desc' %}selected{% endif %}>Highest rated</option>
+                <option value="experience_desc" {% if search_form.sort.value == 'experience_desc' %}selected{% endif %}>Most experienced</option>
+            </select>
+        </div>
+        <div class="field full">
+            <button class="btn btn-primary" type="submit">Apply Filters</button>
+            <a class="btn btn-secondary" href="{% url 'lawyers_by_category' category.id %}">Clear</a>
+        </div>
+    </form>
+</section>
 
-        {% for lawyer in lawyers %}
+<section class="lawyer-grid lawyer-grid-modern">
+    {% for lawyer in lawyers %}
+        <article class="lawyer-card lawyer-card-modern">
+            <div class="lawyer-card-top">
+                <div>
+                    <strong class="lawyer-name">{{ lawyer.name }}</strong>
+                    <p class="lawyer-city">{{ lawyer.city|default:lawyer.location|default:"City not listed" }}</p>
+                </div>
+                <span class="status-pill"><span class="dot {% if lawyer.is_online %}online{% endif %}"></span>{{ lawyer.status_label }}</span>
+            </div>
 
-        <div class="card">
+            <div class="lawyer-badges">
+                <span class="info-badge">{{ lawyer.specialization|default:lawyer.category.name }}</span>
+                <span class="info-badge">{{ lawyer.experience }} years experience</span>
+                <span class="info-badge">&#8377;{{ lawyer.fee }}</span>
+            </div>
 
-            <h3>{{ lawyer.name }}</h3>
+            <div class="rating-row" aria-label="Rating {{ lawyer.rating_avg }} out of 5">
+                <span class="stars">★★★★★</span>
+                <span>{{ lawyer.rating_avg }} / 5</span>
+                <span class="muted">{{ lawyer.review_count }} reviews</span>
+            </div>
 
-            <p class="info"><b>Experience:</b> {{ lawyer.experience }} years</p>
+            <p class="muted lawyer-card-copy">{{ lawyer.bio|default:"Professional legal support tailored to your consultation needs."|truncatechars:130 }}</p>
 
-            <p class="info"><b>Email:</b> {{ lawyer.email }}</p>
-
-            <p class="info"><b>Phone:</b> {{ lawyer.phone }}</p>
-              <strong>Address:</strong> 📍 {{ lawyer.location }}
-
-              
-            <a href="/lawyer/profile/{{lawyer.id}}/" style="text-decoration:none;">
-                <button>View Profile</button>
-            </a>
-
-
-           <div class="lawyer-card">
-
-
-        {% if lawyer.is_online %}
-           <span style="color:green;">🟢 Active Now</span>
-
-
-          {% else %}
-            <span style="color:gray;">⚪ Offline</span>
-           <button disabled>Unavailable</button>
-
-          {% endif %}
-
-         </div>
-
- </div>
-
-        {% endfor %}
-    <div class="back">
-        <a href="/dashboard/">⬅ Back to Dashboard</a>
+            <div class="card-actions">
+                <a class="btn btn-secondary" href="{% url 'lawyer_profile' lawyer.id %}">Profile</a>
+                {% if request.user.is_authenticated and not request.user.profile.is_lawyer %}
+                    <a class="btn btn-primary" href="{% url 'consult_lawyer' lawyer.id %}">Book</a>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-card">No lawyers matched your filters.</div>
+    {% endfor %}
+</section>
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<section class="panel" style="margin-top:24px;">
+    <div class="inline-meta">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-secondary" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-secondary" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
     </div>
-
-</body>
-
-</html>
+</section>
+{% endif %}
+{% endblock %}

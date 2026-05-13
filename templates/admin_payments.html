@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Admin Payments{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Payment Management</h1>
+        <p class="section-copy">Use demo-safe payment controls to move bookings between pending, success, and failed states.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Booking</th><th>Client</th><th>Lawyer</th><th>Amount</th><th>Status</th><th>Update</th></tr></thead>
+            <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td>#{{ payment.booking.id }}</td>
+                    <td>{{ payment.booking.client.username }}</td>
+                    <td>{{ payment.booking.lawyer.name }}</td>
+                    <td>&#8377;{{ payment.amount }}</td>
+                    <td><span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span></td>
+                    <td>
+                        <form method="post" action="{% url 'admin_update_payment' payment.id %}" class="inline-meta">
+                            {% csrf_token %}
+                            <select name="payment_status">
+                                {% for value, label in payment_form.fields.payment_status.choices %}
+                                    <option value="{{ value }}" {% if payment.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-secondary" type="submit">Save</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">No payments found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

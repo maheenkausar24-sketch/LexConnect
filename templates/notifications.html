@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Notifications</h1>
+        <p class="section-copy">Track new messages, booking updates, and payment events.</p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-secondary" type="submit">Mark all as read</button>
+    </form>
+</div>
+
+<div class="notification-list">
+    {% for notification in notifications %}
+        <div class="notification-item">
+            <div class="section-head">
+                <strong>{{ notification.title }}</strong>
+                <span class="muted">{{ notification.created_at|date:"d M h:i A" }}</span>
+            </div>
+            <p class="muted">{{ notification.message }}</p>
+            <div class="hero-actions">
+                {% if notification.url %}
+                    <form method="post" action="{% url 'mark_notification_read' notification.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit">Open</button>
+                    </form>
+                {% endif %}
+                {% if not notification.is_read %}
+                    <span class="chip">Unread</span>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="empty-card">No notifications yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

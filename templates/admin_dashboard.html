@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Admin Control Panel</h1>
+        <p class="section-copy">Oversee users, lawyers, bookings, and payments from one demo-safe operations view.</p>
+    </div>
+</div>
+
+<section class="admin-stat-grid">
+    <div class="admin-stat-card">
+        <span>Total Users</span>
+        <strong>{{ stats.total_users }}</strong>
+        <small>{{ stats.active_users }} active accounts</small>
+    </div>
+    <div class="admin-stat-card">
+        <span>Lawyers</span>
+        <strong>{{ stats.total_lawyers }}</strong>
+        <small>{{ stats.verified_lawyers }} verified, {{ stats.pending_lawyer_verifications }} pending</small>
+    </div>
+    <div class="admin-stat-card">
+        <span>Bookings</span>
+        <strong>{{ stats.total_bookings }}</strong>
+        <small>{{ stats.completed_bookings }} completed consultations</small>
+    </div>
+    <div class="admin-stat-card">
+        <span>Revenue</span>
+        <strong>&#8377;{{ stats.total_revenue }}</strong>
+        <small>{{ stats.successful_payments }} successful payments</small>
+    </div>
+</section>
+
+<section class="hero-actions" style="margin-bottom:24px;">
+    <a class="btn btn-secondary" href="{% url 'admin_lawyers' %}">Manage Lawyers</a>
+    <a class="btn btn-secondary" href="{% url 'admin_clients' %}">Manage Clients</a>
+    <a class="btn btn-secondary" href="{% url 'admin_bookings' %}">Manage Bookings</a>
+    <a class="btn btn-secondary" href="{% url 'admin_payments' %}">Manage Payments</a>
+</section>
+
+<section class="grid grid-3">
+    <div class="panel">
+        <div class="section-head"><h3>Lawyers Awaiting Verification</h3></div>
+        <div class="grid">
+            {% for lawyer in pending_lawyers %}
+                <div class="card">
+                    <strong>{{ lawyer.name }}</strong>
+                    <p class="muted">{{ lawyer.user.username }} &middot; {{ lawyer.category.name }}</p>
+                </div>
+            {% empty %}
+                <div class="empty-card">No lawyers are waiting for verification.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Recent Bookings</h3></div>
+        <div class="grid">
+            {% for booking in recent_bookings %}
+                <div class="card">
+                    <strong>Booking #{{ booking.id }}</strong>
+                    <p class="muted">{{ booking.client.username }} with {{ booking.lawyer.name }}</p>
+                    <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                </div>
+            {% empty %}
+                <div class="empty-card">No bookings yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel">
+        <div class="section-head"><h3>Recent Payments</h3></div>
+        <div class="grid">
+            {% for payment in recent_payments %}
+                <div class="card">
+                    <strong>Booking #{{ payment.booking.id }}</strong>
+                    <p class="muted">{{ payment.booking.client.username }} &middot; &#8377;{{ payment.amount }}</p>
+                    <span class="status-{{ payment.payment_status }}">{{ payment.get_payment_status_display }}</span>
+                </div>
+            {% empty %}
+                <div class="empty-card">No payments yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

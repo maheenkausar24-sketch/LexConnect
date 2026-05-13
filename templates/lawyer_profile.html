@@ -1,91 +1,133 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
+{% block title %}{{ lawyer.name }} | Profile{% endblock %}
+{% block content %}
+<section class="profile-shell">
+    <div class="panel profile-hero">
+        <div>
+            <div class="avatar">&#9878;</div>
+            <h1 class="page-title" style="font-size:34px;">{{ lawyer.name }}</h1>
+            <p class="section-copy">{{ lawyer.specialization|default:lawyer.category.name }} &middot; {{ lawyer.city|default:lawyer.location|default:"City not listed" }} &middot; &#8377;{{ lawyer.fee }}</p>
+            <div class="status-row">
+                <span class="status-pill"><span class="dot {% if lawyer.is_online %}online{% endif %}"></span>{{ lawyer.status_label }}</span>
+                <span class="status-pill">Average rating {{ lawyer.rating_avg|default:"0.00" }} / 5</span>
+                <span class="status-pill">{{ lawyer.review_count }} reviews</span>
+            </div>
+        </div>
+        <div class="profile-cta">
+            {% if request.user.is_authenticated and not request.user.profile.is_lawyer and not request.user.is_staff %}
+                {% if can_start_chat %}
+                    <a class="btn btn-primary" href="{% url 'start_chat' lawyer.id %}">{% if existing_chat %}Open Consultation Chat{% else %}Start Consultation Chat{% endif %}</a>
+                {% endif %}
+                <a class="btn btn-secondary" href="{% url 'consult_lawyer' lawyer.id %}">Book Consultation</a>
+            {% endif %}
+        </div>
+    </div>
 
-<head>
+    <div class="profile-grid">
+        <div class="panel">
+            <div class="section-head"><h3>About Lawyer</h3></div>
+            <p class="section-copy">{{ lawyer.bio|default:"This lawyer is available for secure text consultations on LexConnect." }}</p>
+            <div class="profile-facts">
+                <div class="fact-block">
+                    <span>Specialization</span>
+                    <strong>{{ lawyer.specialization|default:lawyer.category.name }}</strong>
+                </div>
+                <div class="fact-block">
+                    <span>City</span>
+                    <strong>{{ lawyer.city|default:lawyer.location|default:"Not listed" }}</strong>
+                </div>
+                <div class="fact-block">
+                    <span>Fee</span>
+                    <strong>&#8377;{{ lawyer.fee }}</strong>
+                </div>
+            </div>
+        </div>
 
-<title>Lawyer Profile</title>
+        <div class="panel">
+            <div class="section-head"><h3>Experience</h3></div>
+            <div class="metric-card">
+                <span>Years in practice</span>
+                <strong>{{ lawyer.experience|default:0 }}</strong>
+            </div>
+            <div class="metric-card">
+                <span>Completed consultations</span>
+                <strong>{{ completed_bookings_count }}</strong>
+            </div>
+        </div>
 
-<style>
+        <div class="panel">
+            <div class="section-head"><h3>Availability</h3></div>
+            <div class="availability-list">
+                {% for slot in lawyer.availability_slots.all %}
+                    {% if slot.is_active %}
+                        <div class="availability-item">
+                            <strong>{{ slot.get_weekday_display }}</strong>
+                            <span>{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</span>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="muted">Availability schedule has not been published yet.</div>
+                {% endfor %}
+            </div>
+        </div>
 
-body{
-font-family:Arial;
-margin:0;
-background:linear-gradient(135deg,#2c3e50,#4ca1af);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-}
+        <div class="panel">
+            <div class="section-head"><h3>Ratings</h3></div>
+            <div class="rating-summary">
+                <span class="stars">★★★★★</span>
+                <strong>{{ lawyer.rating_avg|default:"0.00" }} / 5</strong>
+                <span class="muted">{{ lawyer.review_count }} reviews</span>
+            </div>
+            <div class="grid" style="margin-top:18px;">
+                {% for review in reviews %}
+                    <div class="card review-card">
+                        <div class="inline-meta">
+                            <strong>{{ review.client.username }}</strong>
+                            <span class="chip">{{ review.rating }} / 5</span>
+                        </div>
+                        <p class="muted">Booking #{{ review.booking.id }}</p>
+                        <p class="muted">{{ review.comment|default:"No written review provided." }}</p>
+                    </div>
+                {% empty %}
+                    <div class="empty-card">No reviews yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
 
-.card{
-background:white;
-padding:40px;
-width:420px;
-border-radius:12px;
-box-shadow:0 10px 25px rgba(0,0,0,0.3);
-text-align:center;
-}
-
-.name{
-font-size:26px;
-font-weight:bold;
-margin-bottom:10px;
-}
-
-.info{
-margin:8px 0;
-}
-
-.btn{
-display:inline-block;
-margin-top:20px;
-background:#2c3e50;
-color:white;
-padding:12px 18px;
-border-radius:6px;
-text-decoration:none;
-}
-
-.btn:hover{
-background:#1a252f;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="card">
-
-<div class="name">⚖ {{lawyer.name}}</div>
-
-<div class="info">
-<b>Specialization:</b> {{lawyer.specialization.name}}
-</div>
-
-<div class="info">
-<b>Experience:</b> {{lawyer.experience}} years
-</div>
-
-<div class="info">
-<b>Location:</b> {{lawyer.location}}
-</div>
-
-<div class="info">
-<b>Email:</b> {{lawyer.email}}
-</div>
-
-<div class="info">
-<b>Phone:</b> {{lawyer.phone}}
-</div>
-
-<a class="btn" href="/consult/{{lawyer.id}}/">
-Consult Now
-</a>
-
-</div>
-
-</body>
-
-</html>
+{% if request.user.is_authenticated and review_form and not request.user.profile.is_lawyer and not request.user.is_staff %}
+<section class="panel" style="margin-top:24px;">
+    <div class="section-head"><h3>Leave a Review</h3></div>
+    <form method="post" action="{% url 'add_review' lawyer.id %}" class="form-grid">
+        {% csrf_token %}
+        <div class="field">
+            <label>Completed consultation</label>
+            <select name="booking_id" required>
+                {% for booking in review_booking_choices %}
+                    <option value="{{ booking.id }}">#{{ booking.id }} - {{ booking.appointment_date }} {{ booking.appointment_time|time:"H:i" }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>Rating</label>
+            <select name="rating" required>
+                <option value="">Select rating</option>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Very good</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Average</option>
+                <option value="1">1 - Poor</option>
+            </select>
+        </div>
+        <div class="field full">
+            <label>Comment</label>
+            <textarea name="comment" placeholder="Share your consultation experience"></textarea>
+        </div>
+        <div class="field full">
+            <button class="btn btn-primary" type="submit">Submit Review</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+{% endblock %}

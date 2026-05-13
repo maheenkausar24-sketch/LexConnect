@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Lawyer Bookings{% endblock %}
+{% block content %}
+<div class="section-head">
+    <div>
+        <h1 class="page-title" style="font-size:40px;">Booking Management</h1>
+        <p class="section-copy">Review assigned consultations, wait for payment confirmation, then complete or cancel when needed.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'lawyer_dashboard' %}">Back to Dashboard</a>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Client</th><th>Schedule</th><th>Issue</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.client.username }}</td>
+                    <td>{{ booking.appointment_date }} {{ booking.appointment_time|time:"H:i" }}</td>
+                    <td>{{ booking.issue|truncatechars:75 }}</td>
+                    <td><span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
+                    <td><span class="status-{{ booking.payment.payment_status }}">{{ booking.payment.get_payment_status_display }}</span></td>
+                    <td>
+                        <div class="inline-meta">
+                            {% if booking.status == 'confirmed' %}
+                                <form method="post" action="{% url 'update_booking_status' booking.id 'completed' %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-primary" type="submit">Complete</button>
+                                </form>
+                                <form method="post" action="{% url 'update_booking_status' booking.id 'cancelled' %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-danger" type="submit">Cancel</button>
+                                </form>
+                            {% elif booking.status == 'pending' %}
+                                <span class="muted">Waiting for payment</span>
+                            {% elif booking.status == 'completed' %}
+                                <span class="muted">Review can now be submitted by the client.</span>
+                            {% else %}
+                                <span class="muted">No action</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">No bookings assigned yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
