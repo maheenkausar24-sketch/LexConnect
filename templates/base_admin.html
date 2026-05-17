@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin | LexConnect{% endblock %}</title>
+    {% include 'includes/head_assets.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'main/css/admin-shell.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="app-shell admin-shell">
+<div class="site-shell">
+    <nav class="site-nav site-nav-app">
+        <div class="nav-inner">
+            {% include 'includes/brand.html' %}
+            <div class="nav-links">
+                <span class="nav-link active">Administration</span>
+                <a class="nav-link" href="{% url 'home' %}">Public Site</a>
+                <a class="nav-link" href="{{ admin_console_url }}" target="_blank" rel="noopener">Django Admin</a>
+                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="admin-layout">
+        {% include 'includes/admin_sidebar.html' %}
+        <main class="admin-main">
+            {% if messages %}
+                <div class="message-stack" style="margin-bottom:16px;">
+                    {% for message in messages %}
+                        <div class="flash-message {% if message.tags %}{{ message.tags }}-message{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+<script>
+    lucide.createIcons();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

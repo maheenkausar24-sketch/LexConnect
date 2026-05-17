@@ -1,0 +1,64 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}{% endblock %}
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+{% block usertools %}{% endblock %}
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block content %}
+{% if form.errors and not form.non_field_errors %}
+<p class="errornote">
+{% blocktranslate count counter=form.errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
+</p>
+{% endif %}
+
+{% if form.non_field_errors %}
+{% for error in form.non_field_errors %}
+<p class="errornote">{{ error }}</p>
+{% endfor %}
+{% endif %}
+
+<div id="content-main">
+    <div class="lexconnect-login-brand">
+        <img src="{% static 'main/img/logo.svg' %}" alt="" width="48" height="48">
+        <h1>{% translate "Administrator sign in" %}</h1>
+    </div>
+    <p class="login-subtitle">
+        {% translate "Use the administrator credentials configured in your .env file." %}
+    </p>
+    {% if lexconnect_admin_username %}
+    <p class="login-env-hint">
+        {% translate "Configured user:" %} <code>{{ lexconnect_admin_username }}</code>
+    </p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <p class="errornote">
+        {% blocktranslate trimmed %}
+        You are signed in as {{ username }} but this account cannot access the admin console.
+        {% endblocktranslate %}
+    </p>
+    {% endif %}
+
+    <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+        <div class="form-row">
+            {{ form.username.errors }}
+            <label for="id_username" class="required">{% translate "Username" %}</label>
+            {{ form.username }}
+        </div>
+        <div class="form-row">
+            {{ form.password.errors }}
+            <label for="id_password" class="required">{% translate "Password" %}</label>
+            {{ form.password }}
+            <input type="hidden" name="next" value="{{ next }}">
+        </div>
+        <div class="submit-row">
+            <input type="submit" value="{% translate 'Sign in to admin' %}">
+        </div>
+    </form>
+</div>
+{% endblock %}

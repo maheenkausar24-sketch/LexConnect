@@ -1,0 +1,36 @@
+{% load static %}
+<aside class="admin-sidebar">
+    <div class="admin-sidebar-brand">
+        <img src="{% static 'main/img/logo.svg' %}" alt="" width="36" height="36">
+        <span>Admin Console</span>
+    </div>
+    <nav>
+        <div class="admin-nav-group">
+            <div class="admin-nav-label">Overview</div>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_dashboard' %} active{% endif %}" href="{% url 'admin_dashboard' %}"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        </div>
+        <div class="admin-nav-group">
+            <div class="admin-nav-label">Moderation</div>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_lawyers' %} active{% endif %}" href="{% url 'admin_lawyers' %}"><i data-lucide="briefcase"></i> Lawyers</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_clients' %} active{% endif %}" href="{% url 'admin_clients' %}"><i data-lucide="users"></i> Clients</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_bookings' %} active{% endif %}" href="{% url 'admin_bookings' %}"><i data-lucide="calendar-check"></i> Bookings</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_payments' or request.resolver_match.url_name == 'admin_payment_timeline' %} active{% endif %}" href="{% url 'admin_payments' %}"><i data-lucide="credit-card"></i> Payments</a>
+        </div>
+        <div class="admin-nav-group">
+            <div class="admin-nav-label">Operations</div>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_operational_events' %} active{% endif %}" href="{% url 'admin_operational_events' %}"><i data-lucide="clipboard-list"></i> Audit Events</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_provider_events' or request.resolver_match.url_name == 'admin_provider_event_detail' %} active{% endif %}" href="{% url 'admin_provider_events' %}"><i data-lucide="webhook"></i> Webhooks</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_task_events' %} active{% endif %}" href="{% url 'admin_task_events' %}"><i data-lucide="activity"></i> Task Events</a>
+            <a class="admin-nav-link{% if request.resolver_match.url_name == 'admin_health' %} active{% endif %}" href="{% url 'admin_health' %}"><i data-lucide="heart-pulse"></i> System Health</a>
+        </div>
+        <div class="admin-nav-group">
+            <div class="admin-nav-label">Database</div>
+            <a class="admin-nav-link external" href="{{ admin_console_url }}" target="_blank" rel="noopener"><i data-lucide="database"></i> Django Admin</a>
+        </div>
+        <div class="admin-nav-group">
+            <div class="admin-nav-label">Site</div>
+            <a class="admin-nav-link" href="{% url 'home' %}"><i data-lucide="globe"></i> Public Website</a>
+            <a class="admin-nav-link" href="{% url 'logout' %}"><i data-lucide="log-out"></i> Logout</a>
+        </div>
+    </nav>
+</aside>

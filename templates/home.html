@@ -1,64 +1,157 @@
 {% extends 'base_public.html' %}
-{% block title %}LexConnect | Legal Consultation Platform{% endblock %}
+{% block title %}LexConnect | Professional Legal Consultations{% endblock %}
+
 {% block content %}
-<section class="hero hero-compact">
-    <div class="hero-card">
-        <span class="chip">Modern legal-tech consultations</span>
-        <h1>Find verified lawyers, book consultations, and get guided by Lexora AI.</h1>
-        <p>LexConnect connects clients with vetted lawyers across key practice areas. Discover specialists, schedule a slot, and manage your case in one professional workspace.</p>
-        <div class="hero-actions">
-            {% if categories %}
-                {% with first_category=categories.0 %}
-                    <a class="btn btn-primary" href="{% url 'lawyers_by_category' first_category.id %}">Browse Lawyers</a>
-                {% endwith %}
-            {% endif %}
-            <a class="btn btn-secondary" href="{% url 'chatbot' %}">Ask Lexora AI</a>
-            {% if show_demo_accounts %}
-                <a class="btn btn-secondary" href="{% url 'demo_accounts' %}">Demo Accounts</a>
-            {% endif %}
-            {% if not request.user.is_authenticated %}
-                <a class="btn btn-secondary" href="{% url 'register' %}">Join as Client</a>
-            {% endif %}
-        </div>
-    </div>
-    <div class="panel">
-        <div class="section-head section-head-tight">
-            <h3>Featured Lawyers</h3>
-            <span class="muted">Verified specialists ready to consult</span>
-        </div>
-        <div class="grid lawyer-grid-compact">
-            {% for lawyer in featured_lawyers %}
-                <div class="lawyer-card">
-                    <div class="inline-meta">
-                        <strong>{{ lawyer.name }}</strong>
-                        <span class="status-pill"><span class="dot {% if lawyer.is_online %}online{% endif %}"></span>{{ lawyer.status_label }}</span>
+<section class="landing-hero landing-hero-auth">
+    <div class="container">
+        <div class="landing-hero-centered">
+            <div class="landing-eyebrow">Professional legal consultations</div>
+            <h1 class="landing-title">Connect with verified lawyers,<br><em>on your terms</em></h1>
+            <p class="landing-lead landing-lead-center">Sign in as a client to book consultations, or as a lawyer to manage your practice.</p>
+            <div class="landing-auth-cards">
+                <article class="landing-auth-card">
+                    <h2>Client</h2>
+                    <p>Find lawyers, book appointments, and message your counsel securely.</p>
+                    <div class="landing-auth-card-actions">
+                        <a href="{% url 'login' %}" class="btn btn-primary">Sign in</a>
+                        <a href="{% url 'register' %}" class="btn btn-secondary">Create account</a>
                     </div>
-                    <p class="muted">{{ lawyer.category.name }} &middot; {{ lawyer.experience }} yrs &middot; &#8377;{{ lawyer.fee }}</p>
-                    <a class="btn btn-secondary" href="{% url 'lawyer_profile' lawyer.id %}">View Profile</a>
-                </div>
-            {% empty %}
-                <div class="empty-card">
-                    <strong>No lawyers available yet</strong>
-                    <p class="muted">Run <code>python generate_lawyers.py</code> to import demo lawyers from lawyers.csv.</p>
-                </div>
-            {% endfor %}
+                </article>
+                <article class="landing-auth-card">
+                    <h2>Lawyer</h2>
+                    <p>Manage availability, bookings, payments, and client conversations.</p>
+                    <div class="landing-auth-card-actions">
+                        <a href="{% url 'lawyer_login' %}" class="btn btn-primary">Sign in</a>
+                        <a href="{% url 'lawyer_register' %}" class="btn btn-secondary">Join as lawyer</a>
+                    </div>
+                </article>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="panel panel-tight">
-    <div class="section-head section-head-tight">
-        <h2>Popular Categories</h2>
-        <span class="muted">Explore legal topics and find the right expert</span>
-    </div>
-    <div class="category-grid">
-        {% for category in categories %}
-            <a class="category-card" href="{% url 'lawyers_by_category' category.id %}">
-                <div class="icon">&#9878;</div>
-                <h3>{{ category.name }}</h3>
-                <p class="muted">{{ category.description|default:"Browse verified lawyers in this category." }}</p>
-            </a>
-        {% endfor %}
+{% if request.user.is_authenticated %}
+<section class="landing-section" style="padding-top:32px;">
+    <div class="container" style="text-align:center;">
+        {% if request.user.is_staff or request.user.is_superuser %}
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Operations dashboard</a>
+        {% elif request.user.profile.is_lawyer %}
+            <a href="{% url 'lawyer_dashboard' %}" class="btn btn-primary">Go to lawyer dashboard</a>
+        {% else %}
+            <a href="{% url 'client_dashboard' %}" class="btn btn-primary">Go to your dashboard</a>
+        {% endif %}
     </div>
 </section>
+{% endif %}
+
+<section class="landing-stats">
+    <div class="container">
+        <div class="landing-stats-grid">
+            <div class="landing-stat">
+                <strong>{{ platform_stats.lawyer_count }}</strong>
+                <span>Verified Lawyers</span>
+            </div>
+            <div class="landing-stat">
+                <strong>{{ platform_stats.booking_count }}</strong>
+                <span>Consultations</span>
+            </div>
+            <div class="landing-stat">
+                <strong>{{ platform_stats.category_count }}</strong>
+                <span>Practice Areas</span>
+            </div>
+            <div class="landing-stat">
+                <strong>24/7</strong>
+                <span>Lexora Support</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section" id="features">
+    <div class="container">
+        <div class="landing-section-head">
+            <h2>Built for modern legal practice</h2>
+            <p>Everything clients and lawyers need — without complexity or clutter.</p>
+        </div>
+        <div class="landing-features">
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#9878;</div>
+                <h3>Verified specialists</h3>
+                <p>Lawyers are reviewed with credentials, categories, and transparent ratings.</p>
+            </article>
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#128197;</div>
+                <h3>Real-time scheduling</h3>
+                <p>Book against lawyer availability with clear appointment dates and times.</p>
+            </article>
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#128172;</div>
+                <h3>Secure case chat</h3>
+                <p>Continue confidential discussions in booking-linked conversations.</p>
+            </article>
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#10024;</div>
+                <h3>Lexora AI guide</h3>
+                <p>Get orientation and lawyer recommendations before you book.</p>
+            </article>
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#11088;</div>
+                <h3>Reviews & trust</h3>
+                <p>Ratings from completed consultations help you choose with confidence.</p>
+            </article>
+            <article class="landing-feature">
+                <div class="landing-feature-icon">&#128274;</div>
+                <h3>Secure platform</h3>
+                <p>Structured payments, audit trails, and operational monitoring built in.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+{% if featured_lawyers %}
+<section class="landing-section alt" id="lawyers">
+    <div class="container">
+        <div class="landing-section-head">
+            <h2>Featured lawyers</h2>
+            <p>Verified specialists ready to consult across key practice areas.</p>
+        </div>
+        <div class="landing-lawyers-grid">
+            {% for lawyer in featured_lawyers %}
+                <article class="landing-lawyer-card">
+                    <div class="landing-lawyer-top">
+                        <div class="landing-lawyer-avatar">{{ lawyer.name|slice:":1" }}</div>
+                        <div>
+                            <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1.2rem;">{{ lawyer.name }}</h3>
+                            <div class="landing-lawyer-meta">{{ lawyer.specialization|default:lawyer.category.name }}</div>
+                        </div>
+                    </div>
+                    <div class="landing-lawyer-body">
+                        <p class="landing-lawyer-meta">{{ lawyer.city }}{% if lawyer.experience %} &middot; {{ lawyer.experience }} yrs{% endif %}{% if lawyer.rating_avg %} &middot; &#9733; {{ lawyer.rating_avg }}{% endif %}</p>
+                        <a href="{% url 'lawyer_profile' lawyer.id %}" class="btn btn-primary" style="width:100%;margin-top:12px;">View Profile</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if categories %}
+<section class="landing-section" id="categories">
+    <div class="container">
+        <div class="landing-section-head">
+            <h2>Practice areas</h2>
+            <p>Explore categories and connect with the right expert for your matter.</p>
+        </div>
+        <div class="landing-categories">
+            {% for category in categories %}
+                <a href="{% url 'lawyers_by_category' category.id %}" class="landing-category">
+                    <strong>{{ category.name }}</strong>
+                    <span>{{ category.lawyer_set.count }} specialists</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

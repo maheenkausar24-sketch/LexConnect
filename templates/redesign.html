@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexConnect – Premier Legal Consultation Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Playfair+Display:wght@400;500;600&family=Lato:wght@300;400;700&family=Source+Serif+4:opsz,wght@8..60,400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #1C1C1C;
+            --color-accent: #D4AF37;
+            --color-accent-dark: #B8860B;
+            --color-bg: #F5F0E8;
+            --color-surface: #FFFFFF;
+            --color-navy: #2C3E50;
+            --color-bronze: #8B7355;
+            --color-text: #1C1C1C;
+            --color-muted: #6B6B6B;
+            --border-radius-btn: 2px;
+            --border-radius-card: 6px;
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.14);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            line-height: 1.75;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* UTILITIES */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section-padding {
+            padding: 96px 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--color-muted);
+        }
+
+        /* TYPOGRAPHY */
+        .display-h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(40px, 8vw, 80px);
+            font-weight: 600;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(28px, 5vw, 44px);
+            font-weight: 500;
+            line-height: 1.3;
+        }
+
+        .h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(20px, 3vw, 28px);
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .label-uppercase {
+            font-family: 'Lato', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .fine-print {
+            font-family: 'Source Serif 4', serif;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 14px 32px;
+            border-radius: var(--border-radius-btn);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            background-color: var(--color-accent);
+            color: var(--color-primary);
+            border: 1px solid var(--color-accent);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-accent-dark);
+            border-color: var(--color-accent-dark);
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--color-surface);
+            border: 2px solid var(--color-surface);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-surface);
+            color: var(--color-primary);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--color-accent);
+            border: 2px solid var(--color-accent);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--color-accent);
+            color: var(--color-primary);
+        }
+
+        /* NAVBAR */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background-color: rgba(28, 28, 28, 0.95);
+            backdrop-filter: blur(0px);
+            z-index: 1000;
+            transition: backdrop-filter 0.3s ease, border-bottom 0.3s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        header.scrolled {
+            backdrop-filter: blur(12px);
+            border-bottom-color: var(--color-accent);
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            padding: 0 24px;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--color-surface);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo::before {
+            content: "⚖";
+            color: var(--color-accent);
+            font-size: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .nav-link {
+            color: var(--color-surface);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding-bottom: 4px;
+            transition: var(--transition);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--color-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            margin-left: auto;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .hamburger span {
+            width: 24px;
+            height: 2px;
+            background-color: var(--color-surface);
+            transition: var(--transition);
+        }
+
+        /* LANDING PAGE HERO */
+        .landing-hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #0f0f0f 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 72px;
+        }
+
+        .landing-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="%23D4AF37" stroke-width="0.1" opacity="0.03"/></svg>');
+            animation: pan 20s linear infinite;
+        }
+
+        @keyframes pan {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(100px, 100px); }
+        }
+
+        .landing-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 900px;
+            padding: 0 24px;
+        }
+
+        .landing-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--color-accent);
+            border-radius: 20px;
+            color: var(--color-accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+        }
+
+        .landing-heading {
+            color: var(--color-surface);
+            margin-bottom: 24px;
+            font-size: clamp(48px, 10vw, 90px);
+        }
+
+        .landing-subtext {
+            color: var(--color-muted);
+            font-size: 20px;
+            margin-bottom: 48px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .landing-cta-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-accent);
+            border-radius: 8px;
+            padding: 32px 48px;
+            min-width: 280px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .cta-card:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .cta-card-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .cta-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            color: var(--color-surface);
+            margin-bottom: 12px;
+        }
+
+        .cta-card-desc {
+            color: var(--color-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .cta-card .btn {
+            width: 100%;
+        }
+
+        /* MAIN SITE HERO */
+        .hero {
+            min-height: 100vh;
+            background-color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            padding-top: 72px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .hero-content {
+            color: var(--color-surface);
+        }
+
+        .hero-divider {
+            position: absolute;
+            left: 50%;
+            top: 20%;
+            bottom: 20%;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--color-accent), transparent);
+        }
+
+        .hero-heading {
+            color: var(--color-surface);
+            margin-bottom: 24px;
+        }
+
+        .hero-subtext {
+            color: var(--color-muted);
+            font-size: 18px;
+            margin-bottom: 48px;
+            max-width: 90%;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .hero-image {
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.7);
+            animation: kenBurns 8s ease-in-out infinite;
+        }
+
+        @keyframes kenBurns {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* TRUST BAR */
+        .trust-bar {
+            background-color: var(--color-bg);
+            padding: 48px 0;
+            text-align: center;
+        }
+
+        .trust-label {
+            color: var(--color-muted);
+            margin-bottom: 32px;
+        }
+
+        .trust-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .trust-logo {
+            font-size: 24px;
+            color: var(--color-muted);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .trust-logo:hover {
+            opacity: 1;
+            color: var(--color-accent);
+        }
+
+        /* SERVICES GRID */
+        .services {
+            background-color: var(--color-surface);
+            padding: 96px 0;
+        }
+
+        .services-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .services-header .h2 {
+            margin-bottom: 16px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .service-card {
+            background-color: var(--color-surface);
+            border-radius: var(--border-radius-card);
+            border-top: 4px solid var(--color-accent);
+            padding: 32px;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+        }
+
+        .service-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-6px);
+        }
+
+        .service-icon {
+            font-size: 40px;
+            color: var(--color-accent);
+            margin-bottom: 16px;
+        }
+
+        .service-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            margin-bottom: 12px;
+            color: var(--color-primary);
+        }
+
+        .service-card-desc {
+            color: var(--color-muted);
+            line-height: 1.8;
+        }
+
+        /* ATTORNEY PROFILE */
+        .attorney-section {
+            background-color: var(--color-bg);
+            padding: 96px 0;
+        }
+
+        .attorney-inner {
+            display: grid;
+            grid-template-columns: 45% 55%;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .attorney-image {
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .attorney-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .attorney-image::before,
+        .attorney-image::after {
+            content: '';
+            position: absolute;
+            background-color: var(--color-accent);
+        }
+
+        .attorney-image::before {
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-top: 3px solid;
+            border-right: 3px solid;
+        }
+
+        .attorney-image::after {
+            bottom: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            border-bottom: 3px solid;
+            border-left: 3px solid;
+        }
+
+        .attorney-content h3 {
+            margin-bottom: 12px;
+        }
+
+        .attorney-credentials {
+            display: inline-block;
+            color: var(--color-accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .attorney-bio {
+            color: var(--color-text);
+            margin-bottom: 32px;
+            line-height: 1.9;
+        }
+
+        .attorney-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            padding-top: 24px;
+            border-top: 2px solid var(--color-accent);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--color-accent);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--color-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* CASE RESULTS */
+        .results {
+            background-color: var(--color-primary);
+            color: var(--color-surface);
+            padding: 96px 0;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .results-header .h2 {
+            color: var(--color-surface);
+            margin-bottom: 16px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 48px;
+            text-align: center;
+        }
+
+        .result-item {
+            opacity: 0;
+            animation: slideInUp 0.6s ease-out forwards;
+        }
+
+        .result-item:nth-child(1) { animation-delay: 0.1s; }
+        .result-item:nth-child(2) { animation-delay: 0.2s; }
+        .result-item:nth-child(3) { animation-delay: 0.3s; }
+        .result-item:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: var(--color-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* TESTIMONIALS */
+        .testimonials {
+            background-color: var(--color-navy);
+            color: var(--color-surface);
+            padding: 96px 0;
+        }
+
+        .testimonials-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .testimonials-header .h2 {
+            color: var(--color-surface);
+        }
+
+        .testimonial-slider {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .testimonial-item {
+            text-align: center;
+            opacity: 0;
+            position: absolute;
+            inset: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .testimonial-item.active {
+            opacity: 1;
+            position: relative;
+        }
+
+        .testimonial-quote {
+            font-size: 48px;
+            color: var(--color-accent);
+            margin-bottom: 24px;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            font-size: 18px;
+            margin-bottom: 24px;
+            line-height: 1.8;
+        }
+
+        .testimonial-author {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .testimonial-case {
+            font-size: 12px;
+            color: var(--color-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .testimonial-dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 40px;
+        }
+
+        .testimonial-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(212, 175, 55, 0.3);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .testimonial-dot.active {
+            background-color: var(--color-accent);
+            transform: scale(1.3);
+        }
+
+        /* CONSULTATION CTA */
+        .consultation-cta {
+            background-color: var(--color-bg);
+            padding: 96px 0;
+            text-align: center;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><pattern id="grain" patternUnits="userSpaceOnUse" width="100" height="100"><image href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22><rect fill=%22%231c1c1c%22 width=%221%22 height=%221%22 opacity=%220.05%22/></svg>" width="100" height="100"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        }
+
+        .consultation-heading {
+            margin-bottom: 24px;
+        }
+
+        .consultation-subtext {
+            color: var(--color-muted);
+            font-size: 18px;
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* CONTACT SECTION */
+        .contact {
+            background-color: var(--color-surface);
+            padding: 96px 0;
+        }
+
+        .contact-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+
+        .contact-form-group {
+            margin-bottom: 24px;
+        }
+
+        .contact-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .contact-input,
+        .contact-textarea,
+        .contact-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius-card);
+            font-family: inherit;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .contact-input:focus,
+        .contact-textarea:focus,
+        .contact-select:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .contact-textarea {
+            resize: vertical;
+            min-height: 140px;
+        }
+
+        .contact-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--color-accent);
+            color: var(--color-primary);
+            font-weight: 700;
+            border-radius: var(--border-radius-btn);
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .contact-submit:hover {
+            background-color: var(--color-accent-dark);
+            transform: scale(1.02);
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .contact-info-item {
+            border-top: 1px solid #ddd;
+            padding-top: 24px;
+        }
+
+        .contact-info-label {
+            color: var(--color-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .contact-info-content {
+            color: var(--color-primary);
+            font-size: 16px;
+        }
+
+        .contact-map {
+            width: 100%;
+            height: 300px;
+            border-radius: var(--border-radius-card);
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: var(--color-primary);
+            color: var(--color-surface);
+            padding: 96px 0 24px;
+            border-top: 1px solid var(--color-accent);
+        }
+
+        .footer-inner {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+            margin-bottom: 48px;
+            padding-bottom: 48px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .footer-col h3 {
+            color: var(--color-accent);
+            margin-bottom: 24px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .footer-link {
+            color: var(--color-muted);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .footer-link:hover {
+            color: var(--color-accent);
+        }
+
+        .footer-bottom {
+            text-align: center;
+        }
+
+        .footer-copyright {
+            color: var(--color-muted);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .footer-bottom-link {
+            color: var(--color-muted);
+            font-size: 12px;
+            transition: var(--transition);
+        }
+
+        .footer-bottom-link:hover {
+            color: var(--color-accent);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .hero-inner,
+            .attorney-inner,
+            .contact-inner,
+            .footer-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-divider {
+                display: none;
+            }
+
+            .section-padding {
+                padding: 48px 0;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .landing-cta-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-card {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .attorney-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
+            }
+
+            .hero-cta-group {
+                flex-direction: column;
+            }
+
+            .landing-heading {
+                font-size: 36px;
+            }
+
+            .display-h1 {
+                font-size: 40px;
+            }
+
+            .h2 {
+                font-size: 28px;
+            }
+
+            .testimonial-quote {
+                font-size: 36px;
+            }
+
+            .testimonial-text {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .attorney-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-inner {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .landing-cta-group {
+                gap: 12px;
+            }
+
+            .cta-card {
+                padding: 24px 32px;
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <header>
+        <div class="navbar">
+            <div class="logo">LexConnect</div>
+            <nav class="nav-links">
+                <a href="#practice" class="nav-link">Practice Areas</a>
+                <a href="#attorneys" class="nav-link">About</a>
+                <a href="#results" class="nav-link">Results</a>
+                <a href="#testimonials" class="nav-link">Testimonials</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+            <div class="nav-cta">
+                <a href="{% url 'login' %}" class="btn btn-primary">Book Consultation</a>
+            </div>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- LANDING PAGE HERO -->
+    <section class="landing-hero" id="landing">
+        <div class="container">
+            <div class="landing-content">
+                <div class="landing-badge">Welcome to Premium Legal Services</div>
+                <h1 class="display-h1 landing-heading">Justice Is Not a Privilege.<br>It's Our Promise.</h1>
+                <p class="landing-subtext">Connect with elite lawyers who fight for your rights. Trusted by thousands, delivering results.</p>
+                
+                <div class="landing-cta-group">
+                    <div class="cta-card">
+                        <div class="cta-card-icon">👤</div>
+                        <div class="cta-card-title">Client Login</div>
+                        <p class="cta-card-desc">Access your consultations and manage cases</p>
+                        <a href="{% url 'login' %}" class="btn btn-primary" style="width: 100%;">Sign In as Client</a>
+                    </div>
+                    <div class="cta-card">
+                        <div class="cta-card-icon">⚖️</div>
+                        <div class="cta-card-title">Lawyer Portal</div>
+                        <p class="cta-card-desc">Manage your practice and client bookings</p>
+                        <a href="{% url 'lawyer_login' %}" class="btn btn-outline" style="width: 100%;">Sign In as Lawyer</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN HERO (After Landing) -->
+    <section class="hero" id="hero">
+        <div class="hero-divider"></div>
+        <div class="container" style="width: 100%; max-width: 1280px;">
+            <div class="hero-inner">
+                <div class="hero-content">
+                    <h1 class="display-h1 hero-heading">Premium Legal Excellence</h1>
+                    <p class="hero-subtext">Decades of experience combined with cutting-edge legal strategy. Your success is our mission.</p>
+                    <div class="hero-cta-group">
+                        <a href="#consultation" class="btn btn-primary">Book Consultation</a>
+                        <a href="#practice" class="btn btn-secondary">Learn More</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="https://picsum.photos/600/600?random=1" alt="Luxury law office">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUST BAR -->
+    <section class="trust-bar">
+        <div class="container">
+            <p class="label-uppercase trust-label">TRUSTED BY LEADING ORGANIZATIONS</p>
+            <div class="trust-logos">
+                <div class="trust-logo">⚖️ Bar Association</div>
+                <div class="trust-logo">📜 Legal Council</div>
+                <div class="trust-logo">🏛️ Supreme Court</div>
+                <div class="trust-logo">📋 Justice Bureau</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRACTICE AREAS -->
+    <section class="services" id="practice">
+        <div class="container">
+            <div class="services-header">
+                <h2 class="h2">Practice Areas</h2>
+                <p class="text-muted" style="max-width: 600px; margin: 0 auto; margin-top: 16px;">We specialize in the most complex legal challenges, delivering results across all practice areas.</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">🏢</div>
+                    <h3 class="service-card-title">Corporate Law</h3>
+                    <p class="service-card-desc">M&A, contract negotiation, regulatory compliance, and corporate governance for enterprises.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">👨‍👩‍👧</div>
+                    <h3 class="service-card-title">Family Law</h3>
+                    <p class="service-card-desc">Divorce, custody, inheritance, and family dispute resolution with compassion and expertise.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🛡️</div>
+                    <h3 class="service-card-title">Criminal Defense</h3>
+                    <p class="service-card-desc">Aggressive defense strategy for white-collar and criminal cases from arraignment to appeal.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🏠</div>
+                    <h3 class="service-card-title">Real Estate</h3>
+                    <p class="service-card-desc">Property transactions, dispute resolution, zoning, and commercial real estate matters.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">✈️</div>
+                    <h3 class="service-card-title">Immigration</h3>
+                    <p class="service-card-desc">Visa applications, green cards, deportation defense, and employment-based immigration.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">💼</div>
+                    <h3 class="service-card-title">Employment Law</h3>
+                    <p class="service-card-desc">Wrongful termination, discrimination, workplace harassment, and labor disputes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ATTORNEY PROFILE -->
+    <section class="attorney-section" id="attorneys">
+        <div class="container">
+            <div class="attorney-inner">
+                <div class="attorney-image">
+                    <img src="https://picsum.photos/500/600?random=2" alt="Lead Attorney">
+                </div>
+                <div class="attorney-content">
+                    <h3 class="h3">Margaret Richardson</h3>
+                    <div class="attorney-credentials">Senior Partner & Founder</div>
+                    <p class="attorney-bio">With over 25 years of experience in complex litigation and corporate law, Margaret leads our firm's strategic initiatives. Her case results have set precedent in three states, and she's recognized as a leading expert in her field.</p>
+                    
+                    <div class="attorney-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">25+</div>
+                            <div class="stat-label">Years Experience</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">500+</div>
+                            <div class="stat-label">Cases Won</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">94%</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CASE RESULTS -->
+    <section class="results" id="results">
+        <div class="container">
+            <div class="results-header">
+                <h2 class="h2">Exceptional Results</h2>
+            </div>
+            <div class="results-grid">
+                <div class="result-item">
+                    <div class="result-value" data-target="2400000000">$0</div>
+                    <div class="result-label">Recovered</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" data-target="1200">0</div>
+                    <div class="result-label">Cases Won</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" data-target="94">0</div>
+                    <div class="result-label">% Success Rate</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" data-target="30">0</div>
+                    <div class="result-label">Years Experience</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="testimonials-header">
+                <h2 class="h2">Client Testimonials</h2>
+            </div>
+            <div class="testimonial-slider">
+                <div class="testimonial-item active">
+                    <div class="testimonial-quote">"</div>
+                    <p class="testimonial-text">Margaret and her team turned my complex corporate restructuring into a seamless transition. Their expertise and attention to detail were invaluable.</p>
+                    <div class="testimonial-author">James Mitchell</div>
+                    <div class="testimonial-case">Corporate Law</div>
+                </div>
+                <div class="testimonial-item">
+                    <div class="testimonial-quote">"</div>
+                    <p class="testimonial-text">During my custody battle, they fought for my rights every step of the way. I couldn't have asked for better representation.</p>
+                    <div class="testimonial-author">Sarah Johnson</div>
+                    <div class="testimonial-case">Family Law</div>
+                </div>
+                <div class="testimonial-item">
+                    <div class="testimonial-quote">"</div>
+                    <p class="testimonial-text">Their criminal defense strategy was brilliant. My case was dismissed on procedural grounds before trial—a remarkable outcome.</p>
+                    <div class="testimonial-author">David Chen</div>
+                    <div class="testimonial-case">Criminal Defense</div>
+                </div>
+            </div>
+            <div class="testimonial-dots">
+                <div class="testimonial-dot active" data-slide="0"></div>
+                <div class="testimonial-dot" data-slide="1"></div>
+                <div class="testimonial-dot" data-slide="2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONSULTATION CTA -->
+    <section class="consultation-cta" id="consultation">
+        <div class="container">
+            <h2 class="h2 consultation-heading">Ready to Protect Your Rights?</h2>
+            <p class="consultation-subtext">Schedule a confidential consultation with our team. Let's discuss your case and explore your legal options.</p>
+            <a href="#contact" class="btn btn-primary">Start Your Consultation</a>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="contact-inner">
+                <div>
+                    <h2 class="h2" style="margin-bottom: 32px;">Get in Touch</h2>
+                    <form class="contact-form">
+                        <div class="contact-form-group">
+                            <label class="contact-label">Full Name</label>
+                            <input type="text" class="contact-input" placeholder="Your name" required>
+                        </div>
+                        <div class="contact-form-group">
+                            <label class="contact-label">Email Address</label>
+                            <input type="email" class="contact-input" placeholder="your@email.com" required>
+                        </div>
+                        <div class="contact-form-group">
+                            <label class="contact-label">Phone Number</label>
+                            <input type="tel" class="contact-input" placeholder="(555) 000-0000" required>
+                        </div>
+                        <div class="contact-form-group">
+                            <label class="contact-label">Practice Area</label>
+                            <select class="contact-select" required>
+                                <option value="">Select a practice area</option>
+                                <option value="corporate">Corporate Law</option>
+                                <option value="family">Family Law</option>
+                                <option value="criminal">Criminal Defense</option>
+                                <option value="real-estate">Real Estate</option>
+                                <option value="immigration">Immigration</option>
+                                <option value="employment">Employment Law</option>
+                            </select>
+                        </div>
+                        <div class="contact-form-group">
+                            <label class="contact-label">Message</label>
+                            <textarea class="contact-textarea" placeholder="Tell us about your case..." required></textarea>
+                        </div>
+                        <button type="submit" class="contact-submit">Send Consultation Request</button>
+                    </form>
+                </div>
+                <div class="contact-info">
+                    <div>
+                        <h3 class="h3" style="margin-bottom: 24px;">Contact Information</h3>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-info-label">Phone</div>
+                        <div class="contact-info-content">+1 (800) 555-0147</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-info-label">Email</div>
+                        <div class="contact-info-content">hello@lexconnect.legal</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-info-label">Address</div>
+                        <div class="contact-info-content">
+                            123 Legal Plaza<br>
+                            New York, NY 10019<br>
+                            United States
+                        </div>
+                    </div>
+                    <div class="contact-map">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1234567890!2d-74.0060!3d40.7128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-col">
+                    <h3>LexConnect</h3>
+                    <p style="color: var(--color-muted); line-height: 1.8;">Premier legal consultation platform connecting clients with elite attorneys across all practice areas.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <div class="footer-links">
+                        <a href="#practice" class="footer-link">Practice Areas</a>
+                        <a href="#attorneys" class="footer-link">Our Team</a>
+                        <a href="#testimonials" class="footer-link">Testimonials</a>
+                        <a href="#contact" class="footer-link">Contact</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Legal</h3>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Privacy Policy</a>
+                        <a href="#" class="footer-link">Terms of Service</a>
+                        <a href="#" class="footer-link">Cookie Policy</a>
+                        <a href="#" class="footer-link">Disclaimer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; 2026 LexConnect. All rights reserved. | Providing premium legal services with integrity and excellence.</p>
+                <div class="footer-bottom-links">
+                    <a href="#" class="footer-bottom-link">Privacy</a>
+                    <a href="#" class="footer-bottom-link">Terms</a>
+                    <a href="#" class="footer-bottom-link">Sitemap</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Testimonial slider
+        const testimonialDots = document.querySelectorAll('.testimonial-dot');
+        const testimonialItems = document.querySelectorAll('.testimonial-item');
+        let currentSlide = 0;
+
+        testimonialDots.forEach(dot => {
+            dot.addEventListener('click', function() {
+                currentSlide = parseInt(this.dataset.slide);
+                updateTestimonial();
+            });
+        });
+
+        function updateTestimonial() {
+            testimonialItems.forEach(item => item.classList.remove('active'));
+            testimonialDots.forEach(dot => dot.classList.remove('active'));
+            
+            testimonialItems[currentSlide].classList.add('active');
+            testimonialDots[currentSlide].classList.add('active');
+        }
+
+        // Auto rotate testimonials
+        setInterval(() => {
+            currentSlide = (currentSlide + 1) % testimonialItems.length;
+            updateTestimonial();
+        }, 5000);
+
+        // Counter animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('[data-target]');
+            counters.forEach(counter => {
+                const target = parseInt(counter.dataset.target);
+                const increment = target / 30;
+                let current = 0;
+
+                const updateCounter = () => {
+                    if (current < target) {
+                        current += increment;
+                        if (current > target) current = target;
+                        
+                        if (target > 1000) {
+                            counter.textContent = Math.floor(current).toLocaleString() + (target === 2400000000 ? '+' : '');
+                        } else {
+                            counter.textContent = Math.floor(current) + (target === 94 ? '%' : target === 30 ? '+' : '');
+                        }
+                        requestAnimationFrame(updateCounter);
+                    }
+                };
+                updateCounter();
+            });
+        }
+
+        // Intersection Observer for animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && entry.target.id === 'results') {
+                    animateCounters();
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const resultsSection = document.getElementById('results');
+        if (resultsSection) observer.observe(resultsSection);
+
+        // Form submission
+        document.querySelector('.contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thank you for your inquiry! We will contact you shortly.');
+            this.reset();
+        });
+
+        // Scroll reveal animation
+        const revealElements = document.querySelectorAll('.service-card, .testimonial-item');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = `slideInUp 0.6s ease-out ${index * 0.08}s forwards`;
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    </script>
+</body>
+</html>

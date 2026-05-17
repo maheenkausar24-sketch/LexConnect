@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LexConnect{% endblock %}</title>
+    {% include 'includes/head_assets.html' %}
+    <link rel="stylesheet" href="{% static 'main/css/auth.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="auth-shell">
+    <header class="auth-header">
+        <div class="auth-header-inner">
+            {% include 'includes/brand.html' %}
+            <a class="auth-back-link" href="{% url 'home' %}">Back to home</a>
+        </div>
+    </header>
+    <main class="auth-main">
+        {% if messages %}
+            <div class="auth-messages">
+                {% for message in messages %}
+                    <div class="flash-message {% if message.tags %}{{ message.tags }}-message{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

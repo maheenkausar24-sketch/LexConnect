@@ -4,7 +4,9 @@ from .models import Notification
 
 
 def notification_summary(request):
-    base_context = {"show_demo_accounts": getattr(settings, "LEXCONNECT_SHOW_DEMO_ACCOUNTS", False)}
+    base_context = {
+        "admin_console_url": getattr(settings, "LEXCONNECT_ADMIN_URL", "/"),
+    }
     if not request.user.is_authenticated:
         return {**base_context, "unread_notifications_count": 0, "recent_notifications": []}
 

@@ -1,0 +1,34 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="lexconnect-admin-welcome">
+    <h2>{% translate "LexConnect control center" %}</h2>
+    <p>{% translate "Manage all platform data — the same capabilities as Django’s built-in admin." %}</p>
+    {% if lexconnect_admin_stats %}
+    <div class="lexconnect-admin-stats">
+        <div class="lexconnect-admin-stat">
+            <i data-lucide="users" class="stat-icon"></i>
+            <strong>{{ lexconnect_admin_stats.users }}</strong>
+            <span>{% translate "Users" %}</span>
+        </div>
+        <div class="lexconnect-admin-stat">
+            <i data-lucide="briefcase" class="stat-icon"></i>
+            <strong>{{ lexconnect_admin_stats.lawyers }}</strong>
+            <span>{% translate "Lawyers" %}</span>
+        </div>
+        <div class="lexconnect-admin-stat">
+            <i data-lucide="calendar-check" class="stat-icon"></i>
+            <strong>{{ lexconnect_admin_stats.bookings }}</strong>
+            <span>{% translate "Bookings" %}</span>
+        </div>
+        <div class="lexconnect-admin-stat">
+            <i data-lucide="credit-card" class="stat-icon"></i>
+            <strong>{{ lexconnect_admin_stats.payments }}</strong>
+            <span>{% translate "Payments" %}</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{{ block.super }}
+{% endblock %}

@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
-{% block title %}Lawyer Registration{% endblock %}
+{% extends 'base_auth.html' %}
+{% block title %}Lawyer Registration | LexConnect{% endblock %}
 {% block content %}
-<div class="form-shell">
-    <h1 class="page-title" style="font-size:36px;">Join LexConnect as a Lawyer</h1>
-    <p class="section-copy">Build your digital consultation practice with bookings, payments, and real-time chat.</p>
+<div class="auth-card" style="max-width:none;width:min(720px,100%);margin:0 auto;">
+    <h1>Join as a lawyer</h1>
+    <p class="section-copy">Submit your profile for verification and start accepting consultations on LexConnect.</p>
     {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
     <form method="post" enctype="multipart/form-data" class="form-grid">
         {% csrf_token %}
@@ -61,8 +61,12 @@
             <textarea name="bio" placeholder="Tell clients about your expertise, practice areas, and consultation style.">{{ form.bio.value|default:'' }}</textarea>
         </div>
         <div class="field full">
-            <button class="btn btn-primary" type="submit">Create Lawyer Account</button>
+            <button class="btn btn-primary" type="submit" style="width:100%;">Submit application</button>
         </div>
     </form>
+    <div class="auth-footer-links">
+        <p>Already registered? <a href="{% url 'lawyer_login' %}">Sign in as lawyer</a></p>
+        <p>Need legal help instead? <a href="{% url 'register' %}">Create a client account</a> or <a href="{% url 'login' %}">client sign in</a></p>
+    </div>
 </div>
 {% endblock %}

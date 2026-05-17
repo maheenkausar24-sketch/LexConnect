@@ -1081,9 +1081,8 @@ class LexConnectFlowTests(TestCase):
         self.assertIn("object-src 'none'", response.headers["Content-Security-Policy"])
         self.assertEqual(response.headers["Cross-Origin-Opener-Policy"], "same-origin")
 
-    @override_settings(LEXCONNECT_SHOW_DEMO_ACCOUNTS=False)
-    def test_demo_accounts_can_be_disabled_for_production(self):
-        response = self.client.get(reverse("demo_accounts"))
+    def test_demo_accounts_route_is_not_exposed(self):
+        response = self.client.get("/demo-accounts/")
 
         self.assertEqual(response.status_code, 404)
 
