@@ -10,6 +10,29 @@ from .utils import ensure_profile, mark_stale_users_offline
 
 request_logger = logging.getLogger("main.requests")
 
+CSP_KEYWORD_SOURCES = {
+    "self",
+    "none",
+    "unsafe-inline",
+    "unsafe-eval",
+    "strict-dynamic",
+    "report-sample",
+}
+
+
+def format_csp_source(value):
+    """Ensure CSP keywords like self/none are quoted for browser enforcement."""
+    token = (value or "").strip()
+    if not token:
+        return token
+    if (token.startswith("'") and token.endswith("'")) or (token.startswith('"') and token.endswith('"')):
+        return token if token.startswith("'") else f"'{token[1:-1]}'"
+    if token.endswith(":"):
+        return token
+    if token in CSP_KEYWORD_SOURCES:
+        return f"'{token}'"
+    return token
+
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -42,7 +65,8 @@ class SecurityHeadersMiddleware:
         for directive, values in getattr(settings, "LEXCONNECT_CONTENT_SECURITY_POLICY", {}).items():
             if not values:
                 continue
-            directives.append(f"{directive} {' '.join(values)}")
+            formatted_values = [format_csp_source(value) for value in values]
+            directives.append(f"{directive} {' '.join(formatted_values)}")
         return "; ".join(directives)
 
     def __call__(self, request):

@@ -255,6 +255,7 @@ class LawyerAvailabilityForm(ErrorListMixin, forms.ModelForm):
         widgets = {
             "start_time": forms.TimeInput(attrs={"type": "time"}),
             "end_time": forms.TimeInput(attrs={"type": "time"}),
+            "is_active": forms.CheckboxInput(),
         }
 
     def clean(self):

@@ -1,59 +1,52 @@
 {% extends 'base.html' %}
 {% block title %}Lawyer Availability{% endblock %}
 {% block content %}
-<div class="section-head">
+<div class="section-head section-head-tight">
     <div>
-        <h1 class="page-title" style="font-size:40px;">Availability Panel</h1>
+        <h1 class="page-title page-title-md">Availability Panel</h1>
         <p class="section-copy">Publish consultation windows so clients can choose visible slots instead of typing dates manually.</p>
     </div>
     <a class="btn btn-primary" href="{% url 'lawyer_dashboard' %}">Back to Dashboard</a>
 </div>
 
 <section class="grid grid-2">
-    <div class="panel">
-        <div class="section-head"><h3>Add Availability Slot</h3></div>
+    <div class="panel panel-tight">
+        <div class="section-head section-head-tight"><h3>Add Availability Slot</h3></div>
         <form method="post" action="{% url 'add_schedule_slot' %}" class="form-grid">
             {% csrf_token %}
             <div class="field">
-                <label>Weekday</label>
-                <select name="weekday" required>
-                    {% for value, label in availability_form.fields.weekday.choices %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
+                <label for="id_weekday">Weekday</label>
+                {{ availability_form.weekday }}
             </div>
             <div class="field">
-                <label>Start time</label>
-                <input type="time" name="start_time" required>
+                <label for="id_start_time">Start time</label>
+                {{ availability_form.start_time }}
             </div>
             <div class="field">
-                <label>End time</label>
-                <input type="time" name="end_time" required>
+                <label for="id_end_time">End time</label>
+                {{ availability_form.end_time }}
             </div>
             <div class="field">
-                <label>Slot duration</label>
-                <select name="slot_duration_minutes">
-                    <option value="30">30 minutes</option>
-                    <option value="45">45 minutes</option>
-                    <option value="60">60 minutes</option>
-                </select>
+                <label for="id_slot_duration_minutes">Slot duration</label>
+                {{ availability_form.slot_duration_minutes }}
             </div>
             <div class="field">
-                <label>Active</label>
-                <select name="is_active">
-                    <option value="on">Yes</option>
-                </select>
+                <label class="checkbox-row">
+                    {{ availability_form.is_active }}
+                    <span>Active (visible to clients)</span>
+                </label>
             </div>
             <div class="field full">
                 <button class="btn btn-primary" type="submit">Save Slot</button>
             </div>
         </form>
+        <p class="muted form-hint">Tip: use a window of at least 2 hours (e.g. 09:00-17:00) so clients see multiple bookable slots.</p>
     </div>
-    <div class="panel">
-        <div class="section-head"><h3>Published Slots</h3></div>
+    <div class="panel panel-tight">
+        <div class="section-head section-head-tight"><h3>Published Slots</h3></div>
         <div class="grid">
             {% for slot in availability_slots %}
-                <div class="card">
+                <div class="card card-compact">
                     <strong>{{ slot.get_weekday_display }}</strong>
                     <p class="muted">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }} &middot; {{ slot.slot_duration_minutes }} min slots</p>
                     <span class="chip">{% if slot.is_active %}Active{% else %}Inactive{% endif %}</span>

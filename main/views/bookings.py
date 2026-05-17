@@ -65,7 +65,7 @@ def payment_page(request, booking_id):
 
     if request.method == "POST" and payment.payment_status == Payment.PaymentStatus.SUCCESS:
         messages.info(request, "This payment is already marked successful. You can continue in chat.")
-        return redirect("start_chat", lawyer_id=booking.lawyer_id)
+        return redirect("start_chat_for_booking", booking_id=booking.id)
 
     if request.method == "POST" and form.is_valid():
         try:
@@ -83,7 +83,12 @@ def payment_page(request, booking_id):
             "booking": booking,
             "payment": payment,
             "form": form,
-            "chat_url": None if payment.payment_status != Payment.PaymentStatus.SUCCESS else reverse("start_chat", args=[booking.lawyer_id]),
+            "chat_url": (
+                reverse("start_chat_for_booking", args=[booking.id])
+                if payment.payment_status == Payment.PaymentStatus.SUCCESS
+                and booking.status in {Booking.Status.CONFIRMED, Booking.Status.COMPLETED}
+                else None
+            ),
         },
     )
 

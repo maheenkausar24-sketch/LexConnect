@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -11,6 +12,9 @@ from django.utils import timezone
 from ..models import LawCategory, Lawyer, UserProfile, normalize_category_name
 from ..utils import ensure_profile_role
 from .auth import COMMON_DEMO_LAWYER_PASSWORD
+
+
+logger = logging.getLogger("main.operations")
 
 
 CSV_FILENAMES = ("lawyers.csv", "lawyers_data.csv")
@@ -88,6 +92,11 @@ def row_value(row, *keys):
     return ""
 
 
+def row_is_blank(row):
+    tracked = ("name", "full_name", "email", "phone", "specialization", "category", "practice_area", "experience", "city", "location")
+    return not any(row_value(row, key) for key in tracked)
+
+
 def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, default_password=COMMON_DEMO_LAWYER_PASSWORD):
     path = Path(csv_path) if csv_path else find_lawyer_csv(base_dir)
     if path is None:
@@ -102,6 +111,10 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
         reader = csv.DictReader(handle)
         for row in reader:
             summary.total_processed += 1
+            if row_is_blank(row):
+                summary.skipped += 1
+                continue
+
             name = row_value(row, "name", "full_name")
             email = row_value(row, "email").lower()
             specialization = row_value(row, "specialization", "category", "practice_area")
@@ -111,6 +124,7 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
 
             if not email or not specialization:
                 summary.skipped += 1
+                logger.info("lawyer_import_skipped_row", extra={"email": email, "reason": "missing_email_or_specialization"})
                 continue
 
             category_name = normalize_category_name(specialization)
@@ -148,6 +162,7 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
             experience = safe_int(experience_value, default=getattr(lawyer, "experience", 0))
             fee = safe_decimal(row_value(row, "fee", "consultation_fee"), default=getattr(lawyer, "fee", Decimal("500.00")))
 
+            now = timezone.now()
             defaults = {
                 "user": user,
                 "category": category,
@@ -159,6 +174,8 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
                 "location": city,
                 "fee": fee,
                 "is_verified": True,
+                "verification_status": Lawyer.VerificationStatus.APPROVED,
+                "verified_at": now,
             }
             bio = row_value(row, "bio")
             if bio:
@@ -176,7 +193,17 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
 
             if created:
                 summary.created += 1
+                logger.info("lawyer_import_created", extra={"email": email, "username": user.username})
             else:
                 summary.updated += 1
+                logger.info("lawyer_import_updated", extra={"email": email, "username": user.username})
 
+    logger.info(
+        "lawyer_import_complete path=%s processed=%s created=%s updated=%s skipped=%s",
+        summary.path,
+        summary.total_processed,
+        summary.created,
+        summary.updated,
+        summary.skipped,
+    )
     return summary

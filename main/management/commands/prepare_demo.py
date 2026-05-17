@@ -22,11 +22,11 @@ DEMO_LAWYER_PASSWORD = COMMON_DEMO_LAWYER_PASSWORD
 DEMO_LAWYER_COUNT = 5
 DEMO_ACCOUNTS_FILE = "demo_accounts.txt"
 SLOT_TEMPLATES = [
-    [(0, time(10, 0), time(11, 0)), (1, time(14, 0), time(15, 0)), (3, time(11, 0), time(12, 0))],
-    [(0, time(12, 0), time(13, 0)), (2, time(10, 0), time(11, 0)), (4, time(16, 0), time(17, 0))],
-    [(1, time(9, 30), time(10, 30)), (3, time(15, 0), time(16, 0)), (5, time(11, 0), time(12, 0))],
-    [(0, time(15, 0), time(16, 0)), (2, time(12, 0), time(13, 0)), (4, time(10, 0), time(11, 0))],
-    [(1, time(11, 0), time(12, 0)), (3, time(9, 30), time(10, 30)), (5, time(14, 0), time(15, 0))],
+    [(0, time(9, 0), time(17, 0)), (1, time(9, 0), time(17, 0)), (2, time(9, 0), time(17, 0))],
+    [(3, time(9, 0), time(17, 0)), (4, time(9, 0), time(17, 0)), (5, time(10, 0), time(16, 0))],
+    [(6, time(10, 0), time(16, 0)), (0, time(14, 0), time(18, 0)), (1, time(14, 0), time(18, 0))],
+    [(2, time(9, 30), time(17, 30)), (3, time(9, 30), time(17, 30)), (4, time(9, 30), time(17, 30))],
+    [(5, time(10, 0), time(15, 0)), (6, time(10, 0), time(15, 0)), (0, time(10, 0), time(15, 0))],
 ]
 
 
@@ -123,7 +123,7 @@ class Command(BaseCommand):
                     weekday=weekday,
                     start_time=start_time,
                     end_time=end_time,
-                    defaults={"is_active": True},
+                    defaults={"is_active": True, "slot_duration_minutes": 30},
                 )
                 if created:
                     created_slots += 1

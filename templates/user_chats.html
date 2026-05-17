@@ -33,7 +33,10 @@
             {% endif %}
         </a>
     {% empty %}
-        <div class="empty-card">No chats yet. Chat becomes available after a booking is paid and confirmed.</div>
+        <div class="empty-card">
+            <strong>No active consultation chats</strong>
+            <p class="muted">Chats appear here after payment is successful and the booking is confirmed. If you just received approval, open the booking and tap Chat.</p>
+        </div>
     {% endfor %}
 </div>
 {% endblock %}

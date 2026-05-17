@@ -1,10 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block title %}Demo Accounts{% endblock %}
 {% block content %}
 <div class="section-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">Demo Accounts</h1>
-        <p class="section-copy">Use these credentials to demonstrate the full LexConnect role-based workflow.</p>
+        <p class="section-copy">Use these credentials to demonstrate the full LexConnect role-based workflow. {{ visible_lawyer_count }} verified lawyer(s) are visible to clients.</p>
     </div>
 </div>
 
@@ -41,5 +41,16 @@
             </tbody>
         </table>
     </div>
+    {% if page_obj.has_other_pages %}
+    <div class="pagination" style="margin-top:16px;">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-secondary" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-secondary" href="?page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

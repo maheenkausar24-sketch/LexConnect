@@ -334,6 +334,8 @@ def admin_update_payment_status(payment, *, next_status, actor=None):
         raise ValidationError("Completed bookings must keep a successful payment record.")
 
     if next_status == payment.payment_status:
+        if next_status == Payment.PaymentStatus.SUCCESS:
+            return mark_payment_success(payment, actor=actor)
         return payment
 
     if next_status == Payment.PaymentStatus.SUCCESS:

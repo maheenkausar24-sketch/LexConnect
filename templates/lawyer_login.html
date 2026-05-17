@@ -1,19 +1,21 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Lawyer Login{% endblock %}
 {% block content %}
 <div class="form-shell">
     <h1 class="page-title" style="font-size:36px;">Lawyer Login</h1>
     <p class="section-copy">Manage bookings, active chats, notifications, and online presence.</p>
-    {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
-    <form method="post" class="form-grid">
+    {% if error %}
+    <div class="flash-message error-message" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'lawyer_login' %}" class="form-grid">
         {% csrf_token %}
         <div class="field full">
-            <label>Username</label>
-            <input type="text" name="username" value="{{ form.username.value|default:'' }}" required>
+            <label for="lawyer-login-username">Username or email</label>
+            <input id="lawyer-login-username" type="text" name="username" value="{{ form.username.value|default:'' }}" autocomplete="username" required>
         </div>
         <div class="field full">
-            <label>Password</label>
-            <input type="password" name="password" required>
+            <label for="lawyer-login-password">Password</label>
+            <input id="lawyer-login-password" type="password" name="password" autocomplete="current-password" required>
         </div>
         <div class="field full">
             <button class="btn btn-primary" type="submit">Login as Lawyer</button>

@@ -39,17 +39,26 @@
                     <td><span class="status-{{ booking.payment.payment_status }}">{{ booking.payment.get_payment_status_display }}</span></td>
                     <td>
                         <div class="inline-meta">
+                            {% if booking.payment.payment_status == 'success' %}
+                                {% if booking.status == 'confirmed' or booking.status == 'completed' %}
+                                    <a class="btn btn-primary" href="{% url 'start_chat_for_booking' booking.id %}">Chat</a>
+                                {% endif %}
+                            {% endif %}
                             {% if booking.status == 'confirmed' %}
                                 <form method="post" action="{% url 'update_booking_status' booking.id 'completed' %}">
                                     {% csrf_token %}
-                                    <button class="btn btn-primary" type="submit">Complete</button>
+                                    <button class="btn btn-secondary" type="submit">Complete</button>
                                 </form>
                                 <form method="post" action="{% url 'update_booking_status' booking.id 'cancelled' %}">
                                     {% csrf_token %}
                                     <button class="btn btn-danger" type="submit">Cancel</button>
                                 </form>
                             {% elif booking.status == 'pending' %}
-                                <span class="muted">Waiting for payment</span>
+                                {% if booking.payment.payment_status == 'success' %}
+                                    <span class="muted">Payment received — confirming booking</span>
+                                {% else %}
+                                    <span class="muted">Waiting for payment</span>
+                                {% endif %}
                             {% elif booking.status == 'completed' %}
                                 <span class="muted">Review can now be submitted by the client.</span>
                             {% else %}

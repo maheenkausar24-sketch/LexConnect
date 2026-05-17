@@ -1,55 +1,62 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block title %}LexConnect | Legal Consultation Platform{% endblock %}
 {% block content %}
-<section class="hero">
+<section class="hero hero-compact">
     <div class="hero-card">
-        <span class="chip">Chat-first legal consultations</span>
-        <h1>Find the right lawyer, pay safely, and consult through scheduled legal chats.</h1>
-        <p>LexConnect helps clients discover lawyers by category, schedule consultations, confirm demo payments, receive updates, and continue the case conversation in one place.</p>
+        <span class="chip">Modern legal-tech consultations</span>
+        <h1>Find verified lawyers, book consultations, and get guided by Lexora AI.</h1>
+        <p>LexConnect connects clients with vetted lawyers across key practice areas. Discover specialists, schedule a slot, and manage your case in one professional workspace.</p>
         <div class="hero-actions">
             {% if categories %}
                 {% with first_category=categories.0 %}
-                    <a class="btn btn-primary" href="{% url 'lawyers_by_category' first_category.id %}">Find a Lawyer</a>
+                    <a class="btn btn-primary" href="{% url 'lawyers_by_category' first_category.id %}">Browse Lawyers</a>
                 {% endwith %}
             {% endif %}
-            <a class="btn btn-secondary" href="{% url 'demo_accounts' %}">View Demo Accounts</a>
-            <a class="btn btn-primary" href="{% url 'register' %}">Start as Client</a>
-            <a class="btn btn-secondary" href="{% url 'lawyer_register' %}">Join as Lawyer</a>
+            <a class="btn btn-secondary" href="{% url 'chatbot' %}">Ask Lexora AI</a>
+            {% if show_demo_accounts %}
+                <a class="btn btn-secondary" href="{% url 'demo_accounts' %}">Demo Accounts</a>
+            {% endif %}
+            {% if not request.user.is_authenticated %}
+                <a class="btn btn-secondary" href="{% url 'register' %}">Join as Client</a>
+            {% endif %}
         </div>
     </div>
     <div class="panel">
-        <div class="section-head">
+        <div class="section-head section-head-tight">
             <h3>Featured Lawyers</h3>
-            <span class="muted">Top categories from LexConnect</span>
+            <span class="muted">Verified specialists ready to consult</span>
         </div>
-        <div class="grid">
+        <div class="grid lawyer-grid-compact">
             {% for lawyer in featured_lawyers %}
                 <div class="lawyer-card">
                     <div class="inline-meta">
                         <strong>{{ lawyer.name }}</strong>
                         <span class="status-pill"><span class="dot {% if lawyer.is_online %}online{% endif %}"></span>{{ lawyer.status_label }}</span>
                     </div>
-                    <p class="muted">{{ lawyer.category.name }} &middot; {{ lawyer.experience }} years &middot; &#8377;{{ lawyer.fee }}</p>
+                    <p class="muted">{{ lawyer.category.name }} &middot; {{ lawyer.experience }} yrs &middot; &#8377;{{ lawyer.fee }}</p>
                     <a class="btn btn-secondary" href="{% url 'lawyer_profile' lawyer.id %}">View Profile</a>
                 </div>
             {% empty %}
-                <div class="empty-card">No lawyers available yet.</div>
+                <div class="empty-card">
+                    <strong>No lawyers available yet</strong>
+                    <p class="muted">Run <code>python generate_lawyers.py</code> to import demo lawyers from lawyers.csv.</p>
+                </div>
             {% endfor %}
         </div>
     </div>
 </section>
 
-<section class="panel">
-    <div class="section-head">
+<section class="panel panel-tight">
+    <div class="section-head section-head-tight">
         <h2>Popular Categories</h2>
-        <span class="muted">Explore the legal topics we support.</span>
+        <span class="muted">Explore legal topics and find the right expert</span>
     </div>
     <div class="category-grid">
         {% for category in categories %}
             <a class="category-card" href="{% url 'lawyers_by_category' category.id %}">
                 <div class="icon">&#9878;</div>
                 <h3>{{ category.name }}</h3>
-                <p class="muted">{{ category.description|default:"Browse vetted lawyers in this category." }}</p>
+                <p class="muted">{{ category.description|default:"Browse verified lawyers in this category." }}</p>
             </a>
         {% endfor %}
     </div>

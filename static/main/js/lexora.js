@@ -265,6 +265,9 @@
         }
 
         form.addEventListener("submit", (event) => {
+            if (event.target !== form) {
+                return;
+            }
             event.preventDefault();
             submitQuestion();
         });

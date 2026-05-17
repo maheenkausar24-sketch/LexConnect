@@ -776,12 +776,98 @@ class LexConnectFlowTests(TestCase):
         booking.payment.save(update_fields=["payment_status"])
 
         allowed_response = self.client.get(reverse("start_chat", args=[lawyer.id]))
+        self.assertEqual(allowed_response.status_code, 302)
+        self.assertEqual(allowed_response.url, reverse("start_chat_for_booking", args=[booking.id]))
+
+        booking_scoped_response = self.client.get(reverse("start_chat_for_booking", args=[booking.id]))
         chat = Chat.objects.get(booking=booking)
-        self.assertRedirects(allowed_response, reverse("chat_page", args=[chat.id]))
+        self.assertRedirects(booking_scoped_response, reverse("chat_page", args=[chat.id]))
 
         self.client.force_login(lawyer_user)
         chat_page = self.client.get(reverse("chat_page", args=[chat.id]))
         self.assertEqual(chat_page.status_code, 200)
+
+    def test_payment_success_auto_creates_booking_chat(self):
+        client_user = self.create_client()
+        admin_user = User.objects.create_superuser("chat_admin", "chat_admin@example.com", "admin-pass-123")
+        _, lawyer = self.create_lawyer()
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=datetime.strptime("11:00", "%H:%M").time(),
+            status=Booking.Status.PENDING,
+        )
+        payment = Payment.objects.create(
+            booking=booking,
+            amount=lawyer.fee,
+            payment_status=Payment.PaymentStatus.AWAITING_VERIFICATION,
+        )
+        self.assertFalse(Chat.objects.filter(booking=booking).exists())
+
+        payment_services.mark_payment_success(payment, actor=admin_user)
+        booking.refresh_from_db()
+        payment.refresh_from_db()
+
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertEqual(payment.payment_status, Payment.PaymentStatus.SUCCESS)
+        chat = Chat.objects.get(booking=booking)
+        self.assertEqual(chat.client_id, client_user.id)
+        self.assertEqual(chat.lawyer_id, lawyer.id)
+
+    def test_orphaned_success_payment_reconciles_pending_booking(self):
+        client_user = self.create_client()
+        admin_user = User.objects.create_superuser("reconcile_admin", "reconcile_admin@example.com", "admin-pass-123")
+        _, lawyer = self.create_lawyer()
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=time(11, 0),
+            status=Booking.Status.PENDING,
+        )
+        payment = Payment.objects.create(
+            booking=booking,
+            amount=lawyer.fee,
+            payment_status=Payment.PaymentStatus.SUCCESS,
+        )
+        self.assertFalse(Chat.objects.filter(booking=booking).exists())
+
+        payment_services.mark_payment_success(payment, actor=admin_user)
+        booking.refresh_from_db()
+
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertTrue(Chat.objects.filter(booking=booking).exists())
+
+    def test_admin_reapprove_success_reconciles_pending_booking(self):
+        client_user = self.create_client()
+        admin_user = self.create_admin(username="reapprove_admin", email="reapprove_admin@example.com")
+        _, lawyer = self.create_lawyer()
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=time(12, 0),
+            status=Booking.Status.PENDING,
+        )
+        payment = Payment.objects.create(
+            booking=booking,
+            amount=lawyer.fee,
+            payment_status=Payment.PaymentStatus.SUCCESS,
+        )
+        self.client.force_login(admin_user)
+        response = self.client.post(
+            reverse("admin_update_payment", args=[payment.id]),
+            {"payment_status": Payment.PaymentStatus.SUCCESS, "confirmation_token": "payment-status"},
+        )
+
+        booking.refresh_from_db()
+        self.assertRedirects(response, reverse("admin_payments"))
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertTrue(Chat.objects.filter(booking=booking).exists())
 
     def test_review_is_tied_to_completed_booking(self):
         client_user = self.create_client()

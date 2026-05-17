@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from ..audit import audit_event, record_operational_event
 from ..models import Booking, BookingStatusHistory, Notification, Payment, PaymentLedgerEntry, PaymentStatusHistory, ProviderEvent, RefundRequest, RefundStatusHistory
-from .bookings import transition_booking_status
+from .bookings import BOOKING_CHAT_STATUSES, transition_booking_status
+from .chat import booking_is_chat_eligible, ensure_chat_for_booking
 from .payment_providers import get_payment_provider, payload_hash, verify_provider_event as provider_event_verified
 from ..utils import create_notification
 
@@ -69,6 +70,79 @@ def _locked_payment_and_booking(payment):
     )
     locked_payment.booking = booking
     return locked_payment, booking
+
+
+def confirm_booking_for_successful_payment(payment, booking, *, actor=None, reason="Payment verified"):
+    """Move PENDING -> CONFIRMED when payment is already (or just became) SUCCESS."""
+    payment_logger.info(
+        {
+            "event": "payment_success_booking_confirm_attempt",
+            "payment_id": payment.id,
+            "booking_id": booking.id,
+            "payment_status": payment.payment_status,
+            "booking_status": booking.status,
+        }
+    )
+    if payment.payment_status != Payment.PaymentStatus.SUCCESS:
+        payment_logger.info(
+            {
+                "event": "payment_success_booking_confirm_skipped",
+                "payment_id": payment.id,
+                "booking_id": booking.id,
+                "reason": "payment_not_success",
+            }
+        )
+        return booking, False
+
+    booking.refresh_from_db(fields=["status", "updated_at"])
+    if booking.status != Booking.Status.PENDING:
+        payment_logger.info(
+            {
+                "event": "payment_success_booking_confirm_skipped",
+                "payment_id": payment.id,
+                "booking_id": booking.id,
+                "reason": "booking_not_pending",
+                "booking_status": booking.status,
+            }
+        )
+        return booking, False
+
+    transition_booking_status(
+        booking,
+        Booking.Status.CONFIRMED,
+        actor=actor,
+        reason=reason,
+        payment=payment,
+    )
+    booking.refresh_from_db(fields=["status", "updated_at"])
+    payment_logger.info(
+        {
+            "event": "payment_success_booking_confirmed",
+            "payment_id": payment.id,
+            "booking_id": booking.id,
+            "booking_status": booking.status,
+        }
+    )
+    return booking, True
+
+
+def _ensure_chat_after_successful_payment(payment, booking):
+    booking.refresh_from_db(fields=["status", "updated_at"])
+    if booking.status not in BOOKING_CHAT_STATUSES:
+        return None
+    chat = ensure_chat_for_booking(booking)
+    payment_logger.info(
+        {
+            "event": "payment_success_chat_unlock_check",
+            "payment_id": payment.id,
+            "booking_id": booking.id,
+            "booking_status": booking.status,
+            "payment_status": payment.payment_status,
+            "chat_eligible": booking_is_chat_eligible(booking),
+            "chat_id": chat.id if chat else None,
+        }
+    )
+    return chat
 
 
 def _processed_provider_event(provider, provider_event_id):
@@ -220,6 +294,14 @@ def transition_payment_status(
         if processed_event:
             if processed_event.payment_id != payment.id:
                 raise ValidationError("This provider event has already been processed for another payment.")
+            if payment.payment_status == Payment.PaymentStatus.SUCCESS:
+                confirm_booking_for_successful_payment(
+                    payment,
+                    booking,
+                    actor=actor,
+                    reason=reason or "Payment already successful",
+                )
+                _ensure_chat_after_successful_payment(payment, booking)
             return payment, False
 
         should_change = validate_payment_transition(payment, next_status, booking)
@@ -227,6 +309,14 @@ def transition_payment_status(
             if idempotency_key and not payment.idempotency_key:
                 payment.idempotency_key = idempotency_key
                 payment.save(update_fields=["idempotency_key", "updated_at"])
+            if payment.payment_status == Payment.PaymentStatus.SUCCESS:
+                confirm_booking_for_successful_payment(
+                    payment,
+                    booking,
+                    actor=actor,
+                    reason=reason or "Payment already successful",
+                )
+                _ensure_chat_after_successful_payment(payment, booking)
             return payment, False
 
         previous_status = payment.payment_status
@@ -281,8 +371,8 @@ def transition_payment_status(
                 description="Payment marked refunded",
             )
 
-        if payment.payment_status == Payment.PaymentStatus.SUCCESS and booking.status == Booking.Status.PENDING:
-            transition_booking_status(booking, Booking.Status.CONFIRMED, actor=actor, reason="Payment verified")
+        if payment.payment_status == Payment.PaymentStatus.SUCCESS:
+            confirm_booking_for_successful_payment(payment, booking, actor=actor, reason="Payment verified")
         elif payment.payment_status == Payment.PaymentStatus.FAILED and booking.status == Booking.Status.CONFIRMED:
             booking.status = Booking.Status.PENDING
             booking.save(update_fields=["status", "updated_at"])
@@ -308,6 +398,9 @@ def transition_payment_status(
                 actor=actor,
                 reason="Payment refunded",
             )
+
+        if payment.payment_status == Payment.PaymentStatus.SUCCESS:
+            _ensure_chat_after_successful_payment(payment, booking)
 
     return payment, True
 
@@ -693,25 +786,46 @@ def reconcile_payment_ledger(payment):
 
 def mark_payment_success(payment, *, actor=None):
     payment, changed = transition_payment_status(payment, Payment.PaymentStatus.SUCCESS, actor=actor, reason="Payment marked successful")
-    if not changed:
+    payment.refresh_from_db()
+    booking = Booking.objects.select_related("client", "lawyer", "lawyer__user", "payment").get(id=payment.booking_id)
+    booking_confirmed, _ = confirm_booking_for_successful_payment(
+        payment,
+        booking,
+        actor=actor,
+        reason="Payment marked successful",
+    )
+    if booking_confirmed:
+        booking.refresh_from_db(fields=["status", "updated_at"])
+    chat = _ensure_chat_after_successful_payment(payment, booking)
+    if not changed and not booking_confirmed:
         return payment
-    audit_event("payment_marked_success", actor=actor, booking_id=payment.booking.id, payment_id=payment.id)
+    audit_event("payment_marked_success", actor=actor, booking_id=booking.id, payment_id=payment.id)
+    chat_path = reverse("start_chat_for_booking", args=[booking.id])
     create_notification(
-        payment.booking.lawyer.user,
+        booking.lawyer.user,
         "Payment confirmed",
-        f"Booking #{payment.booking.id} is now confirmed.",
-        reverse("lawyer_dashboard"),
+        f"Booking #{booking.id} is now confirmed.",
+        chat_path,
         notification_type=Notification.NotificationType.PAYMENT,
         priority=Notification.Priority.HIGH,
     )
     create_notification(
-        payment.booking.client,
+        booking.client,
         "Payment recorded",
-        f"Your payment for booking #{payment.booking.id} has been recorded.",
-        reverse("client_dashboard"),
+        f"Your payment for booking #{booking.id} has been recorded. Consultation chat is ready.",
+        chat_path,
         notification_type=Notification.NotificationType.PAYMENT,
         priority=Notification.Priority.HIGH,
     )
+    if chat:
+        payment_logger.info(
+            {
+                "event": "consultation_chat_ready",
+                "booking_id": booking.id,
+                "chat_id": chat.id,
+                "payment_id": payment.id,
+            }
+        )
     return payment
 
 

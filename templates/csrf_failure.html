@@ -1,0 +1,24 @@
+{% extends 'base_public.html' %}
+{% block title %}Session expired{% endblock %}
+{% block content %}
+<section class="panel panel-tight" style="max-width:640px;margin:0 auto;">
+    <h1 class="page-title page-title-md">Security token expired</h1>
+    <p class="section-copy">
+        Your form could not be submitted because the session or CSRF token changed.
+        This usually happens when you sign in as a different role in another browser tab.
+    </p>
+    <p class="muted">Refresh the page and try again. For multi-role testing, use separate browser windows or profiles.</p>
+    <div class="hero-actions" style="margin-top:20px;">
+        <a class="btn btn-primary" href="{% url 'home' %}">Go to homepage</a>
+        {% if request.user.is_authenticated %}
+            {% if request.user.profile.is_lawyer %}
+                <a class="btn btn-secondary" href="{% url 'lawyer_availability' %}">Availability panel</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{% url 'client_dashboard' %}">Client dashboard</a>
+            {% endif %}
+        {% else %}
+            <a class="btn btn-secondary" href="{% url 'login' %}">Client login</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

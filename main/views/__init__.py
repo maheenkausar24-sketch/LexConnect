@@ -25,7 +25,7 @@ from .bookings import (
     reschedule_booking_view,
     update_booking_status,
 )
-from .chat import chat_messages, chat_page, send_message, start_chat, user_chats
+from .chat import chat_messages, chat_page, send_message, start_chat, start_chat_for_booking, user_chats
 from .media import protected_case_document, protected_certificate_file, protected_chat_file
 from .notifications import mark_notification_read, notifications_view
 from .operations import admin_health, admin_task_events, health_live, health_ready

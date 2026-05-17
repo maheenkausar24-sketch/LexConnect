@@ -248,18 +248,20 @@ def summarize_case(issue_text):
 def recommend_lawyers(issue_text="", category_name=None, limit=3):
     category = category_name or classify_legal_issue(issue_text)["name"]
     if category == "General Legal Guidance":
-        queryset = available_lawyers_queryset()
+        queryset = visible_lawyers_queryset()
     else:
-        queryset = available_lawyers_queryset().filter(category__name=category)
+        queryset = visible_lawyers_queryset().filter(category__name=category)
 
-    lawyers = list(queryset.order_by("-rating_avg", "-review_count", "-experience", "name")[:limit])
+    lawyers = list(queryset.order_by("-is_online", "-rating_avg", "-review_count", "-experience", "name")[:limit])
 
     if len(lawyers) < limit:
         fallback = visible_lawyers_queryset()
         if category != "General Legal Guidance":
             fallback = fallback.filter(category__name=category)
         fallback = fallback.exclude(id__in=[lawyer.id for lawyer in lawyers])
-        lawyers.extend(list(fallback.order_by("-rating_avg", "-review_count", "-experience", "name")[: limit - len(lawyers)]))
+        lawyers.extend(
+            list(fallback.order_by("-is_online", "-rating_avg", "-review_count", "-experience", "name")[: limit - len(lawyers)])
+        )
 
     return [
         {

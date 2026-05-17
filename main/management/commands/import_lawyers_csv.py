@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from main.models import Lawyer
 from main.services.lawyer_import import import_lawyers_from_csv
 
 
@@ -26,3 +27,4 @@ class Command(BaseCommand):
         self.stdout.write(f"Created: {summary.created}")
         self.stdout.write(f"Updated: {summary.updated}")
         self.stdout.write(f"Skipped: {summary.skipped}")
+        self.stdout.write(f"Visible to clients: {Lawyer.objects.visible_to_clients().count()}")

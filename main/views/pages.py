@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from ..decorators import client_required, lawyer_required
 from ..forms import LawyerAvailabilityForm, LawyerSearchForm, ReviewForm
 from ..models import Booking, Chat, LawCategory, Payment
+from ..services.bookings import BOOKING_CHAT_STATUSES
 from ..services.auth import get_dashboard_route, is_client_user, lawyer_accounts_queryset
 from ..services.bookings import eligible_booking_for_chat, eligible_review_bookings, get_client_bookings_queryset, get_lawyer_bookings_queryset
 from ..services.lawyers import available_lawyers_queryset, filter_lawyers_queryset, paginate_queryset, visible_lawyers_queryset
@@ -103,9 +105,15 @@ def client_bookings(request):
 @client_required
 def client_chats(request):
     chats = (
-        Chat.objects.filter(client=request.user, booking__isnull=False)
+        Chat.objects.filter(
+            client=request.user,
+            booking__isnull=False,
+            booking__status__in=BOOKING_CHAT_STATUSES,
+            booking__payment__payment_status=Payment.PaymentStatus.SUCCESS,
+        )
         .select_related("lawyer", "lawyer__category", "booking", "booking__payment")
         .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+        .order_by("-updated_at")
     )
     return render(
         request,
@@ -124,9 +132,14 @@ def lawyer_dashboard(request):
     lawyer_bookings = get_lawyer_bookings_queryset(lawyer)
     incoming_bookings = lawyer_bookings[:12]
     active_chats = (
-        lawyer.chats.filter(booking__isnull=False)
+        lawyer.chats.filter(
+            booking__isnull=False,
+            booking__status__in=BOOKING_CHAT_STATUSES,
+            booking__payment__payment_status=Payment.PaymentStatus.SUCCESS,
+        )
         .select_related("client", "booking", "booking__payment")
         .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+        .order_by("-updated_at")
     )[:8]
     payment_summary = Payment.objects.filter(
         booking__lawyer=lawyer,
@@ -178,6 +191,7 @@ def lawyer_bookings(request):
     )
 
 
+@ensure_csrf_cookie
 @lawyer_required
 def lawyer_availability(request):
     lawyer = request.user.lawyer_profile
@@ -195,9 +209,15 @@ def lawyer_availability(request):
 @lawyer_required
 def lawyer_chats(request):
     chats = (
-        Chat.objects.filter(lawyer=request.user.lawyer_profile, booking__isnull=False)
+        Chat.objects.filter(
+            lawyer=request.user.lawyer_profile,
+            booking__isnull=False,
+            booking__status__in=BOOKING_CHAT_STATUSES,
+            booking__payment__payment_status=Payment.PaymentStatus.SUCCESS,
+        )
         .select_related("client", "booking", "booking__payment")
         .annotate(unread_count=Count("messages", filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)))
+        .order_by("-updated_at")
     )
     return render(
         request,
@@ -252,10 +272,12 @@ def lawyer_profile(request, lawyer_id):
     review_form = None
     review_booking_choices = []
 
+    chat_booking = None
     if request.user.is_authenticated and is_client_user(request.user):
         eligible_booking = eligible_booking_for_chat(request.user, lawyer)
         if eligible_booking:
             can_start_chat = True
+            chat_booking = eligible_booking
             existing_chat = getattr(eligible_booking, "chat", None)
 
         review_booking_choices = list(eligible_review_bookings(request.user, lawyer))
@@ -269,6 +291,7 @@ def lawyer_profile(request, lawyer_id):
             "lawyer": lawyer,
             "reviews": reviews,
             "existing_chat": existing_chat,
+            "chat_booking": chat_booking,
             "can_start_chat": can_start_chat,
             "review_form": review_form,
             "review_booking_choices": review_booking_choices,
@@ -295,12 +318,20 @@ def toggle_lawyer_status(request):
 def demo_accounts_page(request):
     if not getattr(settings, "LEXCONNECT_SHOW_DEMO_ACCOUNTS", False):
         raise Http404("Demo accounts are not available.")
-    lawyer_accounts = lawyer_accounts_queryset()
+    lawyer_accounts = (
+        lawyer_accounts_queryset()
+        .filter(lawyer_profile__is_verified=True, is_active=True)
+        .select_related("lawyer_profile", "profile")
+    )
+    visible_count = visible_lawyers_queryset().count()
+    lawyers_page = paginate_list(lawyer_accounts, request.GET.get("page"), per_page=25)
     return render(
         request,
         "demo_accounts.html",
         {
-            "lawyer_accounts": lawyer_accounts,
+            "lawyer_accounts": lawyers_page,
+            "page_obj": lawyers_page,
+            "visible_lawyer_count": visible_count,
             "client_account": {"username": "demo_client", "password": "client@123"},
             "lawyer_password": "lawyer@123",
         },

@@ -40,8 +40,10 @@
                         <div class="inline-meta">
                             {% if booking.payment.payment_status != 'success' %}
                                 <a class="btn btn-secondary" href="{% url 'payment_page' booking.id %}">Payment</a>
+                            {% elif booking.status == 'confirmed' or booking.status == 'completed' %}
+                                <a class="btn btn-primary" href="{% url 'start_chat_for_booking' booking.id %}">Chat</a>
                             {% else %}
-                                <a class="btn btn-primary" href="{% url 'start_chat' booking.lawyer.id %}">Chat</a>
+                                <span class="muted">Chat unlocks when booking is confirmed</span>
                             {% endif %}
                             {% if booking.status == 'pending' or booking.status == 'confirmed' %}
                                 <form method="post" action="{% url 'reschedule_booking' booking.id %}">

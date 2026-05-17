@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block title %}{{ lawyer.name }} | Profile{% endblock %}
 {% block content %}
 <section class="profile-shell">
@@ -15,8 +15,8 @@
         </div>
         <div class="profile-cta">
             {% if request.user.is_authenticated and not request.user.profile.is_lawyer and not request.user.is_staff %}
-                {% if can_start_chat %}
-                    <a class="btn btn-primary" href="{% url 'start_chat' lawyer.id %}">{% if existing_chat %}Open Consultation Chat{% else %}Start Consultation Chat{% endif %}</a>
+                {% if can_start_chat and chat_booking %}
+                    <a class="btn btn-primary" href="{% url 'start_chat_for_booking' chat_booking.id %}">{% if existing_chat %}Open Consultation Chat{% else %}Start Consultation Chat{% endif %}</a>
                 {% endif %}
                 <a class="btn btn-secondary" href="{% url 'consult_lawyer' lawyer.id %}">Book Consultation</a>
             {% endif %}

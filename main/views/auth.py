@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.contrib.auth.models import User
+from django.middleware.csrf import rotate_token
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
@@ -13,6 +14,14 @@ from ..rate_limit import RateLimitExceeded, consume_rate_limit, rate_limit
 from ..services.auth import get_dashboard_route, is_lawyer_user, register_client_user, register_lawyer_user
 from ..services.auth_security import send_verification_email, verify_email_token
 from ..utils import mark_user_offline, mark_user_online
+
+
+def resolve_login_username(identifier):
+    value = (identifier or "").strip()
+    if "@" not in value:
+        return value
+    user = User.objects.filter(email__iexact=value).order_by("id").first()
+    return user.username if user else value
 
 
 @rate_limit("client_register", limit=5, period=300)
@@ -41,18 +50,24 @@ def register(request):
 def login_page(request):
     form = LoginForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
+        username = resolve_login_username(form.cleaned_data["username"])
         user = authenticate(
             request,
-            username=form.cleaned_data["username"],
+            username=username,
             password=form.cleaned_data["password"],
         )
         if user is None:
-            security_event("login_failed", request=request, username=form.cleaned_data["username"])
+            security_event("login_failed", request=request, username=username)
             form.add_error(None, "Invalid login credentials")
         else:
             login(request, user)
+            rotate_token(request)
             mark_user_online(user)
             audit_event("login_success", request=request, actor=user)
+            messages.info(
+                request,
+                "Signed in successfully. If you test multiple roles, use separate browser windows to avoid CSRF token conflicts.",
+            )
             return redirect(get_dashboard_route(user))
 
     return render(request, "login.html", {"form": form, "error": form.first_error()})
@@ -62,18 +77,24 @@ def login_page(request):
 def lawyer_login(request):
     form = LoginForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
+        username = resolve_login_username(form.cleaned_data["username"])
         user = authenticate(
             request,
-            username=form.cleaned_data["username"],
+            username=username,
             password=form.cleaned_data["password"],
         )
         if user is None or not is_lawyer_user(user):
-            security_event("lawyer_login_failed", request=request, username=form.cleaned_data["username"])
+            security_event("lawyer_login_failed", request=request, username=username)
             form.add_error(None, "Lawyer account not found or inactive")
         else:
             login(request, user)
+            rotate_token(request)
             mark_user_online(user)
             audit_event("lawyer_login_success", request=request, actor=user)
+            messages.info(
+                request,
+                "Lawyer session started. Use a separate browser window for client testing to avoid CSRF token conflicts.",
+            )
             return redirect("lawyer_dashboard")
 
     return render(request, "lawyer_login.html", {"form": form, "error": form.first_error()})

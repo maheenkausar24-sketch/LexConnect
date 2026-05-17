@@ -172,7 +172,7 @@ def slot_statuses_for_date(lawyer, appointment_date, *, exclude_booking=None):
     return statuses
 
 
-def upcoming_available_slots(lawyer, *, days=10, limit=8):
+def upcoming_available_slots(lawyer, *, days=21, limit=32):
     upcoming_slots = []
     today = timezone.localdate()
 
@@ -187,7 +187,7 @@ def upcoming_available_slots(lawyer, *, days=10, limit=8):
     return upcoming_slots
 
 
-def upcoming_slot_statuses(lawyer, *, days=10, limit=16):
+def upcoming_slot_statuses(lawyer, *, days=21, limit=32):
     upcoming_slots = []
     today = timezone.localdate()
 
@@ -270,7 +270,7 @@ def create_booking_with_payment(client, lawyer, cleaned_data):
     return booking
 
 
-def validate_booking_transition(booking, next_status):
+def validate_booking_transition(booking, next_status, *, payment=None):
     try:
         next_status = Booking.Status(next_status)
     except ValueError as exc:
@@ -285,16 +285,16 @@ def validate_booking_transition(booking, next_status):
             f"Booking cannot move from {booking.get_status_display().lower()} to {next_status.label.lower()}."
         )
 
-    payment = getattr(booking, "payment", None)
+    effective_payment = payment if payment is not None else getattr(booking, "payment", None)
     if next_status in {Booking.Status.CONFIRMED, Booking.Status.COMPLETED}:
-        if not payment or payment.payment_status != Payment.PaymentStatus.SUCCESS:
+        if not effective_payment or effective_payment.payment_status != Payment.PaymentStatus.SUCCESS:
             raise ValidationError("A successful payment is required before confirming or completing a booking.")
 
 
-def transition_booking_status(booking, next_status, *, reason="", actor=None):
+def transition_booking_status(booking, next_status, *, reason="", actor=None, payment=None):
     with transaction.atomic():
         booking = lock_booking_for_update(booking)
-        validate_booking_transition(booking, next_status)
+        validate_booking_transition(booking, next_status, payment=payment)
 
         previous_status = booking.status
         booking.status = Booking.Status(next_status)

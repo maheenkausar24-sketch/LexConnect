@@ -1,16 +1,65 @@
+import logging
+
 from django.db.models import Q
 from django.http import Http404
 
 from ..models import Booking, Chat, Message, Notification, Payment, UserProfile
 from ..utils import broadcast_chat_message, create_notification, serialize_message
+from .bookings import BOOKING_CHAT_STATUSES
+
+
+chat_logger = logging.getLogger("main.realtime")
+
+
+def booking_is_chat_eligible(booking):
+    payment = getattr(booking, "payment", None)
+    return bool(
+        booking.status in BOOKING_CHAT_STATUSES
+        and payment is not None
+        and payment.payment_status == Payment.PaymentStatus.SUCCESS
+    )
 
 
 def get_or_create_chat_for_booking(booking):
-    chat, _ = Chat.objects.get_or_create(
+    chat, created = Chat.objects.get_or_create(
         booking=booking,
         defaults={"client": booking.client, "lawyer": booking.lawyer},
     )
+    update_fields = []
+    if chat.client_id != booking.client_id:
+        chat.client = booking.client
+        update_fields.append("client")
+    if chat.lawyer_id != booking.lawyer_id:
+        chat.lawyer = booking.lawyer
+        update_fields.append("lawyer")
+    if update_fields:
+        update_fields.append("updated_at")
+        chat.save(update_fields=update_fields)
+    if created:
+        chat_logger.info(
+            {
+                "event": "chat_created_for_booking",
+                "chat_id": chat.id,
+                "booking_id": booking.id,
+                "client_id": booking.client_id,
+                "lawyer_id": booking.lawyer_id,
+            }
+        )
     return chat
+
+
+def ensure_chat_for_booking(booking):
+    if not booking_is_chat_eligible(booking):
+        chat_logger.info(
+            {
+                "event": "chat_not_eligible",
+                "booking_id": booking.id,
+                "booking_status": booking.status,
+                "payment_status": getattr(getattr(booking, "payment", None), "payment_status", None),
+            }
+        )
+        return None
+    return get_or_create_chat_for_booking(booking)
 
 
 def _chat_access_queryset():

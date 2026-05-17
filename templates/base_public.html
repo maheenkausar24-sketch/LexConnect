@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LexConnect{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'main/css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="public-shell">
+<div class="site-shell">
+    <nav class="site-nav site-nav-public">
+        <div class="nav-inner">
+            <a class="brand" href="{% url 'home' %}">
+                <span class="brand-badge">&#9878;</span>
+                <span>LexConnect</span>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="{% url 'home' %}">Home</a>
+                {% if show_demo_accounts %}
+                    <a class="nav-link" href="{% url 'demo_accounts' %}">Demo Accounts</a>
+                {% endif %}
+                <a class="nav-link" href="{% url 'chatbot' %}">Lexora AI</a>
+                {% if request.user.is_authenticated %}
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                        <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+                    {% elif request.user.profile.is_lawyer %}
+                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'lawyer_dashboard' %}">Lawyer Dashboard</a>
+                    {% else %}
+                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'client_dashboard' %}">Client Dashboard</a>
+                    {% endif %}
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'login' %}">Client Login</a>
+                    <a class="nav-link" href="{% url 'lawyer_login' %}">Lawyer Login</a>
+                    <a class="nav-link btn btn-primary nav-cta" href="{% url 'register' %}">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-container page-container-public">
+        {% if messages %}
+            <div class="message-stack">
+                {% for message in messages %}
+                    <div class="flash-message {% if message.tags %}{{ message.tags }}-message{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% if request.resolver_match.url_name != 'chatbot' %}
+    {% include 'includes/lexora_widget.html' %}
+    <script src="{% static 'main/js/lexora.js' %}"></script>
+{% endif %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>

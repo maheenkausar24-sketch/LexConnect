@@ -20,7 +20,7 @@
     const removeButton = root.querySelector("[data-remove-preview]");
     const sendButton = root.querySelector("[data-send-button]");
     const micButton = root.querySelector("[data-mic-button]");
-    const connectionStatus = root.querySelector("[data-connection-status]");
+    const presenceBadge = root.querySelector("[data-chat-presence]");
     const wsPath = root.dataset.wsPath;
     const sendUrl = root.dataset.sendUrl;
     const messagesUrl = root.dataset.messagesUrl;
@@ -36,6 +36,26 @@
     const renderedIds = new Set();
     const pendingMessages = new Map();
 
+    function isSocketOpen() {
+        return Boolean(socket && socket.readyState === WebSocket.OPEN);
+    }
+
+    function setPresence(isOnline) {
+        if (!presenceBadge) {
+            return;
+        }
+        presenceBadge.textContent = isOnline ? "Online" : "Offline";
+        presenceBadge.dataset.state = isOnline ? "online" : "offline";
+    }
+
+    function markOnline() {
+        setPresence(true);
+    }
+
+    function markOffline() {
+        setPresence(false);
+    }
+
     messagesBox.querySelectorAll("[data-message-id]").forEach(function (bubble) {
         const messageId = bubble.dataset.messageId;
         if (!messageId) {
@@ -47,14 +67,6 @@
 
     function getEmptyState() {
         return messagesBox.querySelector("[data-empty-state]");
-    }
-
-    function setConnectionState(state, label) {
-        if (!connectionStatus) {
-            return;
-        }
-        connectionStatus.textContent = label;
-        connectionStatus.dataset.state = state;
     }
 
     function removeEmptyState() {
@@ -326,13 +338,13 @@
     }
 
     function startPolling() {
-        if (!messagesUrl || pollingTimer) {
+        if (!messagesUrl || pollingTimer || isSocketOpen()) {
             return;
         }
-        setConnectionState("syncing", "Reconnecting");
         pollingTimer = window.setInterval(function () {
             fetchMissedMessages();
         }, 3000);
+        fetchMissedMessages();
     }
 
     function stopPolling() {
@@ -348,7 +360,7 @@
             return;
         }
         heartbeatTimer = window.setInterval(function () {
-            if (socket && socket.readyState === WebSocket.OPEN) {
+            if (isSocketOpen()) {
                 socket.send(JSON.stringify({ type: "ping" }));
             }
         }, 25000);
@@ -381,6 +393,7 @@
                 return response.json();
             })
             .then(function (data) {
+                markOnline();
                 (data.messages || []).forEach(function (message) {
                     renderMessage(message, {
                         statusText:
@@ -408,26 +421,15 @@
         }, delay);
     }
 
-    function setupSocket() {
-        if (!wsPath || closedManually) {
-            return;
-        }
-
-        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-            return;
-        }
-
-        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        setConnectionState("connecting", "Connecting");
-        socket = new WebSocket(protocol + "://" + window.location.host + wsPath);
-        socket.onopen = function () {
+    function attachSocketHandlers(activeSocket) {
+        activeSocket.onopen = function () {
             reconnectAttempts = 0;
-            setConnectionState("online", "Live");
+            markOnline();
             stopPolling();
             startHeartbeat();
             fetchMissedMessages();
         };
-        socket.onmessage = function (event) {
+        activeSocket.onmessage = function (event) {
             let payload = {};
             try {
                 payload = JSON.parse(event.data);
@@ -435,8 +437,10 @@
                 return;
             }
             if (payload.type === "pong") {
+                markOnline();
                 return;
             }
+            markOnline();
             if (payload.client_temp_id && pendingMessages.has(payload.client_temp_id)) {
                 reconcilePendingMessage(payload.client_temp_id, payload);
                 return;
@@ -445,22 +449,53 @@
                 statusText: String(payload.sender_id) === String(currentUserId) ? "sent" : "",
             });
         };
-        socket.onerror = function () {
-            setConnectionState("syncing", "Syncing");
-            startPolling();
+        activeSocket.onerror = function () {
+            if (!isSocketOpen()) {
+                startPolling();
+            }
         };
-        socket.onclose = function (event) {
-            socket = null;
+        activeSocket.onclose = function (event) {
+            if (socket === activeSocket) {
+                socket = null;
+            }
             stopHeartbeat();
-            startPolling();
             if (event.code === 4400 || event.code === 4403) {
                 stopPolling();
-                setConnectionState("offline", "Chat unavailable");
                 closedManually = true;
+                markOffline();
                 return;
             }
-            scheduleReconnect();
+            if (!closedManually) {
+                startPolling();
+                scheduleReconnect();
+            }
         };
+    }
+
+    function setupSocket() {
+        if (!wsPath || closedManually) {
+            return;
+        }
+
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+            if (isSocketOpen()) {
+                markOnline();
+            }
+            return;
+        }
+
+        if (socket) {
+            try {
+                socket.close();
+            } catch (error) {
+                // Ignore close errors while replacing the socket.
+            }
+            socket = null;
+        }
+
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        socket = new WebSocket(protocol + "://" + window.location.host + wsPath);
+        attachSocketHandlers(socket);
     }
 
     function previewFile(file) {
@@ -549,6 +584,7 @@
                 if (data.error) {
                     return;
                 }
+                markOnline();
                 reconcilePendingMessage(tempId, data.message);
                 textInput.value = "";
                 resetPreview();
@@ -590,11 +626,13 @@
             fetchMissedMessages();
             if (!socket || socket.readyState === WebSocket.CLOSED) {
                 setupSocket();
+            } else if (isSocketOpen()) {
+                markOnline();
             }
         }
     });
 
+    markOnline();
     scrollToBottom(true);
     setupSocket();
-    startPolling();
 })();

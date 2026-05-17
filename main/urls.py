@@ -62,6 +62,7 @@ urlpatterns = [
     path("booking/<int:booking_id>/cancel/", views.cancel_booking_view, name="cancel_booking"),
     path("request-success/", views.request_success, name="request_success"),
     path("chat/start/<int:lawyer_id>/", views.start_chat, name="start_chat"),
+    path("chat/booking/<int:booking_id>/", views.start_chat_for_booking, name="start_chat_for_booking"),
     path("chat-room/<int:chat_id>/", views.chat_page, name="chat_page"),
     path("chat-room/<int:chat_id>/messages/", views.chat_messages, name="chat_messages"),
     path("chat-room/<int:chat_id>/send/", views.send_message, name="send_message"),

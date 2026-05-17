@@ -188,6 +188,7 @@ else:
         }
     }
 
+CSRF_FAILURE_VIEW = "main.views.csrf.csrf_failure"
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
