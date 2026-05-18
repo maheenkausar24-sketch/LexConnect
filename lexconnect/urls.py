@@ -3,10 +3,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-urlpatterns = [
-    path('django-admin/', admin.site.urls),
+from . import admin_config  # noqa: F401
 
-    path('', include('main.urls')),   # THIS LINE IS REQUIRED
+urlpatterns = [
+    path("django-admin/", admin.site.urls),
+    path("", include("main.urls")),
 ]
 
 if settings.DEBUG:

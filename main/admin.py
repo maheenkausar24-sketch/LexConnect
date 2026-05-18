@@ -13,8 +13,10 @@ from .models import (
     LegalDocument,
     Message,
     Notification,
+    OperationalEvent,
     Payment,
     PaymentLedgerEntry,
+    PaymentStatusHistory,
     Review,
     ProviderEvent,
     RefundRequest,
@@ -81,6 +83,21 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ("booking", "amount", "currency", "payment_status", "transaction_id", "provider", "marked_paid_at")
     list_filter = ("payment_status", "provider")
     search_fields = ("transaction_id", "booking__client__username", "booking__lawyer__name")
+
+
+@admin.register(PaymentStatusHistory)
+class PaymentStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ("payment", "from_status", "to_status", "actor", "created_at")
+    list_filter = ("to_status", "created_at")
+    search_fields = ("payment__transaction_id", "reason")
+
+
+@admin.register(OperationalEvent)
+class OperationalEventAdmin(admin.ModelAdmin):
+    list_display = ("event", "source", "level", "actor", "created_at")
+    list_filter = ("source", "level", "created_at")
+    search_fields = ("event", "summary", "actor__username")
+    readonly_fields = ("metadata", "created_at")
 
 
 @admin.register(ProviderEvent)

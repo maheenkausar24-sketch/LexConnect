@@ -5,36 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LexConnect{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'main/css/app.css' %}">
+    {% include 'includes/head_assets.html' %}
+    <link rel="stylesheet" href="{% static 'main/css/landing.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="public-shell">
 <div class="site-shell">
     <nav class="site-nav site-nav-public">
         <div class="nav-inner">
-            <a class="brand" href="{% url 'home' %}">
-                <span class="brand-badge">&#9878;</span>
-                <span>LexConnect</span>
-            </a>
+            {% include 'includes/brand.html' %}
             <div class="nav-links">
                 <a class="nav-link" href="{% url 'home' %}">Home</a>
-                {% if show_demo_accounts %}
-                    <a class="nav-link" href="{% url 'demo_accounts' %}">Demo Accounts</a>
-                {% endif %}
+                <a class="nav-link" href="{% url 'home' %}#features">Features</a>
+                <a class="nav-link" href="{% url 'home' %}#lawyers">Lawyers</a>
                 <a class="nav-link" href="{% url 'chatbot' %}">Lexora AI</a>
                 {% if request.user.is_authenticated %}
                     {% if request.user.is_staff or request.user.is_superuser %}
-                        <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+                        <a class="nav-link" href="{% url 'admin_dashboard' %}">Operations</a>
                     {% elif request.user.profile.is_lawyer %}
-                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'lawyer_dashboard' %}">Lawyer Dashboard</a>
+                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'lawyer_dashboard' %}">Dashboard</a>
                     {% else %}
-                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'client_dashboard' %}">Client Dashboard</a>
+                        <a class="nav-link btn btn-primary nav-cta" href="{% url 'client_dashboard' %}">Dashboard</a>
                     {% endif %}
                     <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                 {% else %}
-                    <a class="nav-link" href="{% url 'login' %}">Client Login</a>
-                    <a class="nav-link" href="{% url 'lawyer_login' %}">Lawyer Login</a>
-                    <a class="nav-link btn btn-primary nav-cta" href="{% url 'register' %}">Get Started</a>
+                    <a class="nav-link" href="{% url 'login' %}">Sign in</a>
                 {% endif %}
             </div>
         </div>
@@ -42,7 +37,7 @@
 
     <main class="page-container page-container-public">
         {% if messages %}
-            <div class="message-stack">
+            <div class="container message-stack" style="padding-top:16px;">
                 {% for message in messages %}
                     <div class="flash-message {% if message.tags %}{{ message.tags }}-message{% endif %}">{{ message }}</div>
                 {% endfor %}
@@ -50,6 +45,10 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+
+    {% block footer %}
+        {% include 'includes/site_footer.html' %}
+    {% endblock %}
 </div>
 {% if request.resolver_match.url_name != 'chatbot' %}
     {% include 'includes/lexora_widget.html' %}

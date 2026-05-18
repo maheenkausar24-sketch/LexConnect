@@ -1,10 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 {% block title %}Admin Payments{% endblock %}
 {% block content %}
 <div class="section-head">
     <div>
         <h1 class="page-title" style="font-size:40px;">Payment Management</h1>
-        <p class="section-copy">Use demo-safe payment controls to move bookings between pending, success, and failed states.</p>
+        <p class="section-copy">Review and update payment records across pending, success, and failed states.</p>
     </div>
     <a class="btn btn-primary" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
 </div>
@@ -59,16 +59,37 @@
                     </td>
                     <td><a class="btn btn-secondary" href="{% url 'admin_payment_timeline' payment.id %}">Timeline</a></td>
                     <td>
-                        <form method="post" action="{% url 'admin_update_payment' payment.id %}" class="inline-meta" data-confirm="Update payment #{{ payment.id }} status? This can change booking access and notifications.">
-                            {% csrf_token %}
-                            <input type="hidden" name="confirmation_token" value="payment-status">
-                            <select name="payment_status">
-                                {% for value, label in payment_form.fields.payment_status.choices %}
-                                    <option value="{{ value }}" {% if payment.payment_status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-secondary" type="submit">Save</button>
-                        </form>
+                        {% if payment.payment_status == 'awaiting_verification' %}
+                            <div class="button-group" style="display: flex; gap: 8px;">
+                                <form method="post" action="{% url 'admin_update_payment' payment.id %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="confirmation_token" value="payment-status">
+                                    <input type="hidden" name="payment_status" value="success">
+                                    <button class="btn btn-primary" type="submit" style="background: var(--gradient-primary); border: none; color: white; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Accept
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'admin_update_payment' payment.id %}" data-confirm="Are you sure you want to reject this payment?" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="confirmation_token" value="payment-status">
+                                    <input type="hidden" name="payment_status" value="failed">
+                                    <button class="btn btn-secondary" type="submit" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <form method="post" action="{% url 'admin_update_payment' payment.id %}" class="inline-meta" data-confirm="Update payment #{{ payment.id }} status? This can change booking access and notifications.">
+                                {% csrf_token %}
+                                <input type="hidden" name="confirmation_token" value="payment-status">
+                                <select name="payment_status">
+                                    {% for value, label in payment_form.fields.payment_status.choices %}
+                                        <option value="{{ value }}" {% if payment.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-secondary" type="submit">Save</button>
+                            </form>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

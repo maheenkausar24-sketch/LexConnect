@@ -1,12 +1,14 @@
-﻿{% extends 'base.html' %}
-{% block title %}Lawyer Login{% endblock %}
+{% extends 'base_auth.html' %}
+{% block title %}Lawyer Login | LexConnect{% endblock %}
 {% block content %}
-<div class="form-shell">
-    <h1 class="page-title" style="font-size:36px;">Lawyer Login</h1>
-    <p class="section-copy">Manage bookings, active chats, notifications, and online presence.</p>
-    {% if error %}
-    <div class="flash-message error-message" role="alert">{{ error }}</div>
-    {% endif %}
+<div class="auth-card">
+    <div class="auth-role-switch">
+        <a href="{% url 'login' %}">Client</a>
+        <a href="{% url 'lawyer_login' %}" class="active">Lawyer</a>
+    </div>
+    <h1>Lawyer sign in</h1>
+    <p class="section-copy">Manage bookings, availability, client chats, and your practice profile.</p>
+    {% if error %}<div class="flash-message error-message" role="alert">{{ error }}</div>{% endif %}
     <form method="post" action="{% url 'lawyer_login' %}" class="form-grid">
         {% csrf_token %}
         <div class="field full">
@@ -18,9 +20,13 @@
             <input id="lawyer-login-password" type="password" name="password" autocomplete="current-password" required>
         </div>
         <div class="field full">
-            <button class="btn btn-primary" type="submit">Login as Lawyer</button>
+            <button class="btn btn-primary" type="submit" style="width:100%;">Sign in</button>
         </div>
     </form>
-    <p class="muted" style="margin-top:16px;"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+    <div class="auth-footer-links">
+        <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+        <p>Not registered yet? <a href="{% url 'lawyer_register' %}">Join as a lawyer</a></p>
+        <p>Looking for legal help? <a href="{% url 'login' %}">Sign in as a client</a> or <a href="{% url 'register' %}">create a client account</a></p>
+    </div>
 </div>
 {% endblock %}

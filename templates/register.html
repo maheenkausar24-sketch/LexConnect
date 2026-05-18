@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
-{% block title %}Client Registration{% endblock %}
+{% extends 'base_auth.html' %}
+{% block title %}Client Registration | LexConnect{% endblock %}
 {% block content %}
-<div class="form-shell">
-    <h1 class="page-title" style="font-size:36px;">Create Client Account</h1>
-    <p class="section-copy">Start booking consultations and chat with expert lawyers.</p>
+<div class="auth-card">
+    <h1>Create client account</h1>
+    <p class="section-copy">Book consultations with verified lawyers and manage your cases securely.</p>
     {% if error %}<div class="flash-message error-message">{{ error }}</div>{% endif %}
     <form method="post" class="form-grid">
         {% csrf_token %}
@@ -20,8 +20,12 @@
             <input type="password" name="password" required>
         </div>
         <div class="field full">
-            <button class="btn btn-primary" type="submit">Create Account</button>
+            <button class="btn btn-primary" type="submit" style="width:100%;">Create account</button>
         </div>
     </form>
+    <div class="auth-footer-links">
+        <p>Already have an account? <a href="{% url 'login' %}">Sign in as client</a></p>
+        <p>Are you a lawyer? <a href="{% url 'lawyer_register' %}">Register your practice</a> or <a href="{% url 'lawyer_login' %}">lawyer sign in</a></p>
+    </div>
 </div>
 {% endblock %}

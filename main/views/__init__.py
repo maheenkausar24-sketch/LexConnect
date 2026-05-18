@@ -34,7 +34,6 @@ from .pages import (
     client_chats,
     client_dashboard,
     dashboard,
-    demo_accounts_page,
     home,
     lawyer_availability,
     lawyer_bookings,

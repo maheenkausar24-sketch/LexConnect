@@ -168,8 +168,19 @@ LEXCONNECT_ASYNC_NOTIFICATIONS = env_bool("LEXCONNECT_ASYNC_NOTIFICATIONS", bool
 LEXCONNECT_ASYNC_WEBHOOKS = env_bool("LEXCONNECT_ASYNC_WEBHOOKS", False)
 PRESENCE_STALE_SCAN_INTERVAL = env_int("PRESENCE_STALE_SCAN_INTERVAL", 60)
 LEXCONNECT_TRUST_PROXY_HEADERS = env_bool("LEXCONNECT_TRUST_PROXY_HEADERS", False)
-LEXCONNECT_SHOW_DEMO_ACCOUNTS = env_bool("LEXCONNECT_SHOW_DEMO_ACCOUNTS", DEBUG)
+LEXCONNECT_SHOW_DEMO_ACCOUNTS = env_bool("LEXCONNECT_SHOW_DEMO_ACCOUNTS", False)
 LEXCONNECT_SITE_URL = os.getenv("LEXCONNECT_SITE_URL", "http://127.0.0.1:8000").rstrip("/")
+LEXCONNECT_ADMIN_HOST = os.getenv("LEXCONNECT_ADMIN_HOST", "127.0.0.1")
+LEXCONNECT_ADMIN_PORT = env_int("LEXCONNECT_ADMIN_PORT", 9000, minimum=1, maximum=65535)
+LEXCONNECT_ADMIN_URL = os.getenv(
+    "LEXCONNECT_ADMIN_URL",
+    f"http://{LEXCONNECT_ADMIN_HOST}:{LEXCONNECT_ADMIN_PORT}/",
+).rstrip("/") + "/"
+
+# Dedicated administrator (synced on migrate / ensure_admin_user / runadminserver)
+LEXCONNECT_ADMIN_USERNAME = os.getenv("LEXCONNECT_ADMIN_USERNAME", "").strip()
+LEXCONNECT_ADMIN_PASSWORD = os.getenv("LEXCONNECT_ADMIN_PASSWORD", "")
+LEXCONNECT_ADMIN_EMAIL = os.getenv("LEXCONNECT_ADMIN_EMAIL", "admin@lexconnect.local").strip()
 
 if REDIS_URL and env_bool("DJANGO_USE_REDIS_CACHE", True):
     CACHES = {
@@ -223,10 +234,10 @@ STORAGES = {
 LEXCONNECT_CSP_REPORT_ONLY = env_bool("LEXCONNECT_CSP_REPORT_ONLY", False)
 LEXCONNECT_CONTENT_SECURITY_POLICY = {
     "default-src": env_list("LEXCONNECT_CSP_DEFAULT_SRC", "'self'"),
-    "script-src": env_list("LEXCONNECT_CSP_SCRIPT_SRC", "'self','unsafe-inline'"),
-    "style-src": env_list("LEXCONNECT_CSP_STYLE_SRC", "'self','unsafe-inline'"),
+    "script-src": env_list("LEXCONNECT_CSP_SCRIPT_SRC", "'self','unsafe-inline',https://unpkg.com"),
+    "style-src": env_list("LEXCONNECT_CSP_STYLE_SRC", "'self','unsafe-inline',https://fonts.googleapis.com"),
     "img-src": env_list("LEXCONNECT_CSP_IMG_SRC", "'self',data:"),
-    "font-src": env_list("LEXCONNECT_CSP_FONT_SRC", "'self',data:"),
+    "font-src": env_list("LEXCONNECT_CSP_FONT_SRC", "'self',data:,https://fonts.gstatic.com"),
     "connect-src": env_list("LEXCONNECT_CSP_CONNECT_SRC", "'self',ws:,wss:"),
     "object-src": env_list("LEXCONNECT_CSP_OBJECT_SRC", "'none'"),
     "base-uri": env_list("LEXCONNECT_CSP_BASE_URI", "'self'"),

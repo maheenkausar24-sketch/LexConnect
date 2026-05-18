@@ -1,19 +1,18 @@
 from decimal import Decimal
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Count, Q, Sum
-from django.http import Http404, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ..decorators import client_required, lawyer_required
 from ..forms import LawyerAvailabilityForm, LawyerSearchForm, ReviewForm
 from ..models import Booking, Chat, LawCategory, Payment
 from ..services.bookings import BOOKING_CHAT_STATUSES
-from ..services.auth import get_dashboard_route, is_client_user, lawyer_accounts_queryset
+from ..services.auth import get_dashboard_route, is_client_user
 from ..services.bookings import eligible_booking_for_chat, eligible_review_bookings, get_client_bookings_queryset, get_lawyer_bookings_queryset
 from ..services.lawyers import available_lawyers_queryset, filter_lawyers_queryset, paginate_queryset, visible_lawyers_queryset
 
@@ -35,7 +34,20 @@ def filter_booking_list(queryset, params):
 def home(request):
     featured_lawyers = visible_lawyers_queryset()[:6]
     categories = LawCategory.objects.all()[:8]
-    return render(request, "home.html", {"featured_lawyers": featured_lawyers, "categories": categories})
+    platform_stats = {
+        "lawyer_count": visible_lawyers_queryset().count(),
+        "booking_count": Booking.objects.count(),
+        "category_count": LawCategory.objects.count(),
+    }
+    return render(
+        request,
+        "home.html",
+        {
+            "featured_lawyers": featured_lawyers,
+            "categories": categories,
+            "platform_stats": platform_stats,
+        },
+    )
 
 
 @login_required
@@ -314,25 +326,3 @@ def toggle_lawyer_status(request):
     messages.success(request, f"Status updated to {'online' if lawyer.is_online else 'offline'}.")
     return redirect("lawyer_dashboard")
 
-
-def demo_accounts_page(request):
-    if not getattr(settings, "LEXCONNECT_SHOW_DEMO_ACCOUNTS", False):
-        raise Http404("Demo accounts are not available.")
-    lawyer_accounts = (
-        lawyer_accounts_queryset()
-        .filter(lawyer_profile__is_verified=True, is_active=True)
-        .select_related("lawyer_profile", "profile")
-    )
-    visible_count = visible_lawyers_queryset().count()
-    lawyers_page = paginate_list(lawyer_accounts, request.GET.get("page"), per_page=25)
-    return render(
-        request,
-        "demo_accounts.html",
-        {
-            "lawyer_accounts": lawyers_page,
-            "page_obj": lawyers_page,
-            "visible_lawyer_count": visible_count,
-            "client_account": {"username": "demo_client", "password": "client@123"},
-            "lawyer_password": "lawyer@123",
-        },
-    )

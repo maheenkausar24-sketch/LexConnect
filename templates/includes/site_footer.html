@@ -1,0 +1,30 @@
+<footer class="site-footer">
+    <div class="container">
+            <div class="site-footer-grid">
+            <div>
+                <h4>LexConnect</h4>
+                <p style="font-size:14px;line-height:1.7;max-width:280px;">Professional legal consultation platform connecting clients with verified lawyers and AI-guided support.</p>
+            </div>
+            <div>
+                <h4>Platform</h4>
+                <div class="site-footer-links">
+                    <a href="{% url 'home' %}">Home</a>
+                    <a href="{% url 'chatbot' %}">Lexora AI</a>
+                    <a href="{% url 'register' %}">Client Sign Up</a>
+                    <a href="{% url 'lawyer_register' %}">Join as Lawyer</a>
+                </div>
+            </div>
+            <div>
+                <h4>Sign In</h4>
+                <div class="site-footer-links">
+                    <a href="{% url 'login' %}">Client Login</a>
+                    <a href="{% url 'lawyer_login' %}">Lawyer Login</a>
+                </div>
+            </div>
+        </div>
+        <div class="site-footer-bottom">
+            <span>&copy; {% now "Y" %} LexConnect. All rights reserved.</span>
+            <span>Trusted legal consultations, delivered with care.</span>
+        </div>
+    </div>
+</footer>
