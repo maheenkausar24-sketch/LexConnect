@@ -33,7 +33,11 @@
     </div>
     {% if payment.payment_status == 'success' %}
     <div class="hero-actions" style="margin-top:24px;">
-        <a class="btn btn-primary" href="{{ chat_url }}">Open Consultation Chat</a>
+        {% if chat_url %}
+            <a class="btn btn-primary" href="{{ chat_url }}">Open Consultation Chat</a>
+        {% else %}
+            <a class="btn btn-primary" href="{% url 'client_bookings' %}">View Booking</a>
+        {% endif %}
         <a class="btn btn-secondary" href="{% url 'client_bookings' %}">Back to Client Bookings</a>
     </div>
     {% elif payment.payment_status == 'awaiting_verification' %}

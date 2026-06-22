@@ -8,6 +8,7 @@ from pathlib import Path
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
+from django.utils.text import slugify
 
 from ..models import LawCategory, Lawyer, UserProfile, normalize_category_name
 from ..utils import ensure_profile_role
@@ -59,11 +60,15 @@ def split_name(full_name):
     return first_name, last_name
 
 
-def generate_unique_username(seed):
-    base = "".join(ch for ch in (seed or "lawyer").lower() if ch.isalnum() or ch in "._+-")[:140] or "lawyer"
+def generate_unique_username(seed, *, exclude_user_id=None):
+    normalized = slugify(seed or "").replace("-", ".")
+    base = "".join(ch for ch in normalized if ch.isalnum() or ch in "._")[:140] or "lawyer"
     candidate = base
     counter = 1
-    while User.objects.filter(username=candidate).exists():
+    queryset = User.objects.all()
+    if exclude_user_id:
+        queryset = queryset.exclude(id=exclude_user_id)
+    while queryset.filter(username=candidate).exists():
         suffix = f"_{counter}"
         candidate = f"{base[:150 - len(suffix)]}{suffix}"
         counter += 1
@@ -95,6 +100,33 @@ def row_value(row, *keys):
 def row_is_blank(row):
     tracked = ("name", "full_name", "email", "phone", "specialization", "category", "practice_area", "experience", "city", "location")
     return not any(row_value(row, key) for key in tracked)
+
+
+def build_profile_details(row):
+    detail_keys = ("bio", "profile", "profile_details", "details", "description", "about", "certification")
+    lines = [row_value(row, key) for key in detail_keys if row_value(row, key)]
+    known_keys = {
+        "name",
+        "full_name",
+        "email",
+        "phone",
+        "specialization",
+        "category",
+        "practice_area",
+        "experience",
+        "city",
+        "location",
+        "fee",
+        "consultation_fee",
+        *detail_keys,
+    }
+    extra_lines = []
+    for key, value in row.items():
+        clean_key = (key or "").strip()
+        clean_value = (value or "").strip()
+        if clean_key and clean_value and clean_key not in known_keys:
+            extra_lines.append(f"{clean_key}: {clean_value}")
+    return "\n".join([line for line in lines if line] + extra_lines)
 
 
 def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, default_password=COMMON_DEMO_LAWYER_PASSWORD):
@@ -134,9 +166,8 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
             existing_lawyer = Lawyer.objects.filter(email__iexact=email).select_related("user").first()
             user = existing_lawyer.user if existing_lawyer else User.objects.filter(email__iexact=email).order_by("id").first()
             if user is None:
-                username_seed = email.split("@", 1)[0] or name
                 user = User.objects.create(
-                    username=generate_unique_username(username_seed),
+                    username=generate_unique_username(name or email.split("@", 1)[0]),
                     email=email,
                     password=default_password_hash,
                     first_name=first_name,
@@ -144,6 +175,7 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
                     is_active=True,
                 )
             else:
+                user.username = generate_unique_username(name or user.username or email.split("@", 1)[0], exclude_user_id=user.id)
                 user.email = email
                 user.first_name = first_name or user.first_name
                 user.last_name = last_name or user.last_name
@@ -177,9 +209,9 @@ def import_lawyers_from_csv(base_dir, *, csv_path=None, create_if_missing=True, 
                 "verification_status": Lawyer.VerificationStatus.APPROVED,
                 "verified_at": now,
             }
-            bio = row_value(row, "bio")
-            if bio:
-                defaults["bio"] = bio
+            profile_details = build_profile_details(row)
+            if profile_details:
+                defaults["bio"] = profile_details
 
             if lawyer:
                 for field, value in defaults.items():

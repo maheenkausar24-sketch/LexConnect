@@ -11,7 +11,7 @@ from ..models import Booking, Lawyer, Notification, Payment, Review
 from ..rate_limit import rate_limit
 from ..services.auth import is_lawyer_user
 from ..services.bookings import cancel_booking, create_booking_with_payment, eligible_review_bookings, get_client_bookings_queryset, reschedule_booking, time_ranges_overlap, transition_booking_status, upcoming_available_slots, upcoming_slot_statuses
-from ..services.payments import ensure_payment, request_demo_payment_verification
+from ..services.payments import ensure_payment, mark_payment_success, request_demo_payment_verification
 from ..services.lawyers import visible_lawyers_queryset
 from ..utils import create_notification
 
@@ -63,9 +63,23 @@ def payment_page(request, booking_id):
     payment, _ = ensure_payment(booking)
     form = PaymentStatusForm(request.POST or None)
 
+    if payment.payment_status == Payment.PaymentStatus.SUCCESS and booking.status in {Booking.Status.PENDING, Booking.Status.RESCHEDULED}:
+        try:
+            payment = mark_payment_success(payment)
+            booking.refresh_from_db()
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+
+    chat_url = None
+    if (
+        payment.payment_status == Payment.PaymentStatus.SUCCESS
+        and booking.status in {Booking.Status.CONFIRMED, Booking.Status.COMPLETED}
+    ):
+        chat_url = reverse("start_chat_for_booking", args=[booking.id])
+
     if request.method == "POST" and payment.payment_status == Payment.PaymentStatus.SUCCESS:
         messages.info(request, "This payment is already marked successful. You can continue in chat.")
-        return redirect("start_chat_for_booking", booking_id=booking.id)
+        return redirect(chat_url or "client_bookings")
 
     if request.method == "POST" and form.is_valid():
         try:
@@ -83,14 +97,16 @@ def payment_page(request, booking_id):
             "booking": booking,
             "payment": payment,
             "form": form,
-            "chat_url": (
-                reverse("start_chat_for_booking", args=[booking.id])
-                if payment.payment_status == Payment.PaymentStatus.SUCCESS
-                and booking.status in {Booking.Status.CONFIRMED, Booking.Status.COMPLETED}
-                else None
-            ),
+            "chat_url": chat_url,
         },
     )
+
+
+@client_required
+def payment_page_legacy_status_redirect(request, booking_id, status):
+    if not status or status.lower() == "none":
+        messages.info(request, "Payment status refreshed. Continue from the current booking payment page.")
+    return redirect("payment_page", booking_id=booking_id)
 
 
 @lawyer_required

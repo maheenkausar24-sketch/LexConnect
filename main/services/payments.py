@@ -73,7 +73,7 @@ def _locked_payment_and_booking(payment):
 
 
 def confirm_booking_for_successful_payment(payment, booking, *, actor=None, reason="Payment verified"):
-    """Move PENDING -> CONFIRMED when payment is already (or just became) SUCCESS."""
+    """Move a payable active booking to CONFIRMED when payment is SUCCESS."""
     payment_logger.info(
         {
             "event": "payment_success_booking_confirm_attempt",
@@ -95,13 +95,14 @@ def confirm_booking_for_successful_payment(payment, booking, *, actor=None, reas
         return booking, False
 
     booking.refresh_from_db(fields=["status", "updated_at"])
-    if booking.status != Booking.Status.PENDING:
+    confirmable_statuses = {Booking.Status.PENDING, Booking.Status.RESCHEDULED}
+    if booking.status not in confirmable_statuses:
         payment_logger.info(
             {
                 "event": "payment_success_booking_confirm_skipped",
                 "payment_id": payment.id,
                 "booking_id": booking.id,
-                "reason": "booking_not_pending",
+                "reason": "booking_not_confirmable",
                 "booking_status": booking.status,
             }
         )
@@ -788,7 +789,7 @@ def mark_payment_success(payment, *, actor=None):
     payment, changed = transition_payment_status(payment, Payment.PaymentStatus.SUCCESS, actor=actor, reason="Payment marked successful")
     payment.refresh_from_db()
     booking = Booking.objects.select_related("client", "lawyer", "lawyer__user", "payment").get(id=payment.booking_id)
-    booking_confirmed, _ = confirm_booking_for_successful_payment(
+    booking, booking_confirmed = confirm_booking_for_successful_payment(
         payment,
         booking,
         actor=actor,

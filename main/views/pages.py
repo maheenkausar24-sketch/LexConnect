@@ -10,9 +10,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from ..decorators import client_required, lawyer_required
 from ..forms import LawyerAvailabilityForm, LawyerSearchForm, ReviewForm
-from ..models import Booking, Chat, LawCategory, Payment
+from ..models import Booking, Chat, LawCategory, Lawyer, Payment
+from ..services.auth import COMMON_DEMO_LAWYER_PASSWORD, get_dashboard_route, is_client_user
 from ..services.bookings import BOOKING_CHAT_STATUSES
-from ..services.auth import get_dashboard_route, is_client_user
 from ..services.bookings import eligible_booking_for_chat, eligible_review_bookings, get_client_bookings_queryset, get_lawyer_bookings_queryset
 from ..services.lawyers import available_lawyers_queryset, filter_lawyers_queryset, paginate_queryset, visible_lawyers_queryset
 
@@ -46,6 +46,22 @@ def home(request):
             "featured_lawyers": featured_lawyers,
             "categories": categories,
             "platform_stats": platform_stats,
+        },
+    )
+
+
+def lawyer_credentials(request):
+    lawyers = (
+        Lawyer.objects.select_related("user", "category")
+        .filter(user__isnull=False)
+        .order_by("name", "id")
+    )
+    return render(
+        request,
+        "lawyer_credentials.html",
+        {
+            "lawyers": lawyers,
+            "lawyer_password": COMMON_DEMO_LAWYER_PASSWORD,
         },
     )
 

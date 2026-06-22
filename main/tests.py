@@ -869,6 +869,90 @@ class LexConnectFlowTests(TestCase):
         self.assertEqual(booking.status, Booking.Status.CONFIRMED)
         self.assertTrue(Chat.objects.filter(booking=booking).exists())
 
+    def test_payment_page_reconciles_stale_success_and_never_links_none(self):
+        client_user = self.create_client(username="stale_success_client", email="stale_success@example.com")
+        _, lawyer = self.create_lawyer(username="stale_success_lawyer", email="stale_lawyer@example.com")
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=time(12, 30),
+            status=Booking.Status.PENDING,
+        )
+        Payment.objects.create(
+            booking=booking,
+            amount=lawyer.fee,
+            payment_status=Payment.PaymentStatus.SUCCESS,
+        )
+        self.client.force_login(client_user)
+
+        response = self.client.get(reverse("payment_page", args=[booking.id]))
+
+        booking.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertTrue(Chat.objects.filter(booking=booking).exists())
+        self.assertContains(response, reverse("start_chat_for_booking", args=[booking.id]))
+        self.assertNotContains(response, "href=\"None\"")
+
+    def test_legacy_payment_status_url_redirects_without_404(self):
+        client_user = self.create_client(username="legacy_payment_client", email="legacy_payment@example.com")
+        _, lawyer = self.create_lawyer(username="legacy_payment_lawyer", email="legacy_lawyer@example.com")
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=time(13, 0),
+            status=Booking.Status.PENDING,
+        )
+        Payment.objects.create(booking=booking, amount=lawyer.fee)
+        self.client.force_login(client_user)
+
+        response = self.client.get(f"/payment/{booking.id}/None/")
+
+        self.assertRedirects(response, reverse("payment_page", args=[booking.id]), fetch_redirect_response=False)
+
+    def test_admin_success_confirms_rescheduled_booking_and_unlocks_chat(self):
+        client_user = self.create_client(username="rescheduled_pay_client", email="rescheduled_pay@example.com")
+        admin_user = self.create_admin(username="rescheduled_pay_admin", email="rescheduled_admin@example.com")
+        lawyer_user, lawyer = self.create_lawyer(username="rescheduled_pay_lawyer", email="rescheduled_lawyer@example.com")
+        booking = Booking.objects.create(
+            client=client_user,
+            lawyer=lawyer,
+            issue="Need help with a custody matter and legal documentation review.",
+            appointment_date=timezone.localdate() + timedelta(days=2),
+            appointment_time=time(13, 30),
+            status=Booking.Status.RESCHEDULED,
+        )
+        payment = Payment.objects.create(
+            booking=booking,
+            amount=lawyer.fee,
+            payment_status=Payment.PaymentStatus.AWAITING_VERIFICATION,
+        )
+        self.client.force_login(admin_user)
+
+        response = self.client.post(
+            reverse("admin_update_payment", args=[payment.id]),
+            {"payment_status": Payment.PaymentStatus.SUCCESS, "confirmation_token": "payment-status"},
+        )
+
+        booking.refresh_from_db()
+        payment.refresh_from_db()
+        chat = Chat.objects.get(booking=booking)
+        self.assertRedirects(response, reverse("admin_payments"))
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertEqual(payment.payment_status, Payment.PaymentStatus.SUCCESS)
+
+        self.client.force_login(client_user)
+        self.assertRedirects(
+            self.client.get(reverse("start_chat_for_booking", args=[booking.id])),
+            reverse("chat_page", args=[chat.id]),
+        )
+        self.client.force_login(lawyer_user)
+        self.assertEqual(self.client.get(reverse("chat_page", args=[chat.id])).status_code, 200)
+
     def test_review_is_tied_to_completed_booking(self):
         client_user = self.create_client()
         _, lawyer = self.create_lawyer()
